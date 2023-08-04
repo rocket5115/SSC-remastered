@@ -1,0 +1,235 @@
+:root {
+    --width: 80%;
+    --height: 80%;
+    --header-height: 10%;
+    --list-width: 200px;
+    --main-bg-color: rgba(42, 41, 41, 0.914);
+    --main-bg-color-dark: rgba(17, 17, 17, 0.914);
+    --main-bg-color-light: rgba(113, 113, 113, 0.759);
+}
+
+html {
+    overflow: hidden;
+}
+
+html>*:not(input) {
+    user-select: none;
+}
+
+html>* {
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-weight: bold;
+    font-size: 16px;
+    color: whitesmoke;
+}
+
+body {
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    padding: 0%;
+    margin: 0%;
+    width: 100vw;
+    height: 100vh;
+}
+
+.drag-priority {
+    z-index: 3;
+}
+
+.shadow-element {
+    position: absolute;
+    width: 50px;
+    height: 15px;
+    background-color: rgba(201, 185, 185, 0.348);
+    border-radius: 2px;
+}
+
+.G_Container {
+    position: absolute;
+    left: calc((100% - var(--width)) / 2);
+    top: calc((100% - var(--height)) / 2);
+    width: var(--width);
+    height: var(--height);
+    display: grid;
+    grid-template-rows: var(--header-height) calc((100% - var(--header-height)) - 3px);
+    gap: 3px;
+    -webkit-box-shadow: 0px 0px 25px 3px var(--main-bg-color);
+    -moz-box-shadow: 0px 0px 25px 3px var(--main-bg-color);
+    box-shadow: 0px 0px 25px 3px var(--main-bg-color);
+}
+
+.G_Container>div {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: var(--main-bg-color);
+    border-radius: 2px;
+}
+
+.G_Container>div.header {
+    display: grid;
+    grid-template-columns: var(--list-width) calc((100% - var(--list-width)) - 3px);
+    gap: 3px;
+}
+
+.G_Container>div.body {
+    display: grid;
+    grid-template-columns: var(--list-width) calc((100% - var(--list-width)) - 3px);
+    gap: 3px;
+}
+
+.G_Container>div.header>div.header-options {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    min-width: 100px;
+}
+
+.dropbtn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+    border: none;
+    width: 100%;
+    height: 100%;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #bebcbc;
+    color: rgb(37, 30, 30);
+    min-width: 120px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    width: 100%;
+    top: 100%;
+    z-index: 2;
+}
+  
+.dropdown-content li {
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content>*:not(:first-child) {
+    border-top: 1px black solid
+}
+  
+.dropdown-content li:hover {
+    background-color: #f1f1f1;
+}
+  
+.dropdown:hover .dropdown-content {
+    display: block;
+    cursor: pointer;
+}
+
+div.list {
+    display: flex;
+    flex-direction: column;
+    background-color: rgb(37, 30, 30);
+}
+
+div.list>div.scene-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+}
+
+div.list>div.scene-wrapper:not(:first-child)>span:hover {
+    background-color: #4CAF50;
+    cursor: grab;
+}
+
+div.list>div.scene-wrapper>span {
+    width: 100%;
+}
+
+div.list>div.scene-wrapper>div.wrapper-content {
+    position: relative;
+    padding-left: 10px;
+    width: calc(100% - 10px);
+}
+
+div.list>div.scene-wrapper>div.wrapper-content>div.wrapper-element {
+    display: grid;
+    grid-template-columns: 15px calc(100% - 20px);
+    gap: 5px;
+    z-index: 2;
+    border-radius: 5px;
+}
+
+div.list>div.scene-wrapper>div.wrapper-content>div.wrapper-element:hover {
+    cursor: grab;
+    background-color: #4CAF50;
+}
+
+.hide-content>div.wrapper-content {
+    display: none;
+}
+
+.hide-content>div.category-element-main {
+    display: none;
+}
+
+.wrapper-hide-show {
+    float: right;
+    padding-right: 2px;
+}
+
+.wrapper-hide-show:hover {
+    cursor: pointer;
+}
+
+.notifications {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    width: 250px;
+    height: calc(100% - 40px);
+    top: 20px;
+    left: calc(100% - 270px);
+    z-index: 4;
+}
+
+.notifications-element {
+    display: grid;
+    grid-template-rows: 25px calc(100% - 33px) 2px;
+    gap: 5px;
+    background-color: #1E2021;
+    -webkit-box-shadow: 0px 0px 20px 2px var(--main-bg-color-dark);
+    -moz-box-shadow: 0px 0px 20px 2px var(--main-bg-color-dark);
+    box-shadow: 0px 0px 20px 2px var(--main-bg-color-dark);
+    color: rgb(242, 242, 242);
+    padding: 5px;
+    border-radius: 5px;
+    z-index: 4;
+}
+
+.notif-desc {
+    font-size: 13px;
+    color: rgb(199, 199, 199);
+}
+
+.notif-time {
+    position: relative;
+    height: 2px;
+    left: -5px;
+    width: calc(100% + 10px);
+    overflow: hidden;
+}

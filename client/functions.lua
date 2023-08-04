@@ -1,0 +1,145 @@
+--[[
+    Misc
+]]
+
+local sin,cos,abs,pi = math.sin,math.cos,math.abs,math.pi
+local hp = (pi/180)
+
+function RaycastGameplayCamera(distance,camera)
+    local rotation = camera and GetCamRot(camera) or GetGameplayCamRot()
+    local cameraCoord = camera and GetCamCoord(camera) or GetGameplayCamCoord()
+    local x,z = hp * rotation.x, hp * rotation.z
+    local a, b, c, d, e = GetShapeTestResult(StartShapeTestRay(cameraCoord.x, cameraCoord.y, cameraCoord.z, (cameraCoord.x + (-sin(z) * abs(cos(x))) * distance), (cameraCoord.y + (cos(z) * abs(cos(x))) * distance), (cameraCoord.z + sin(x) * distance), -1, -1, 1))
+    return b, c, e
+end
+
+--[[
+    Objects/Peds/Vehicles
+]]--
+
+function PrepareModel(model,err)
+    return(((type(model)=='string'and model~='')and GetHashKey(model)or type(model)=='number'and model)or err)
+end
+
+function RequestModelSync(model)
+    RequestModel(model)
+    while not HasModelLoaded(model) do
+        Wait(10)
+    end
+    return true
+end
+
+function CreateLocalPed(x,y,z,h,model,network,mission,options)
+    if network then network = true else network = false end
+    model = PrepareModel(model,`a_m_m_mexlabor_01`)
+    RequestModelSync(model)
+    local entity = CreatePed(1,model,x,y,z,h,network,mission)
+    RegisterEntity(entity, C_Scene, options)
+    return entity
+end
+
+function CreateLocalVehicle(x,y,z,h,model,network,mission,options)
+    if network then network = true else network = false end
+    model = PrepareModel(model,`blista`)
+    RequestModelSync(model)
+    local entity = CreateVehicle(model,x,y,z,h,network,mission)
+    RegisterEntity(entity, C_Scene, options)
+    return entity
+end
+
+function CreateLocalObject(x,y,z,model,network,mission,door,options)
+    if network then network = true else network = false end
+    model = PrepareModel(model,`prop_weed_block_01`)
+    RequestModelSync(model)
+    local entity = CreateObject(model,x,y,z,network,mission,door)
+    RegisterEntity(entity, C_Scene, options)
+    return entity
+end
+
+Citizen.CreatePed = CreateLocalPed
+Citizen.CreateVehicle = CreateLocalVehicle
+Citizen.CreateObject = CreateLocalObject
+
+function RequestNetworkControl(ent)
+    if DoesEntityExist(ent) then
+        local request = 0
+        NetworkRequestControlOfEntity(ent)
+        while not NetworkHasControlOfEntity(ent)and request<50 do
+            Wait(10)
+            NetworkRequestControlOfEntity(ent)
+            request=request+1
+        end
+    end
+end
+
+function DeleteNetworkedEntity(entity)
+    if NetworkGetEntityIsNetworked(entity) then
+        while not NetworkHasControlOfEntity(entity) and DoesEntityExist(entity) do
+            NetworkRequestControlOfEntity(entity)
+            Wait(1)
+        end
+        if DoesEntityExist(entity) and NetworkHasControlOfEntity(entity) then
+            SetEntityAsMissionEntity(entity, false, true)
+            DeleteEntity(entity)
+        end
+    else
+        SetEntityAsMissionEntity(entity,false,false)
+        DeleteEntity(entity)
+        DeleteObject(entity)
+    end
+end
+
+function DrawXYZGraphFromEntity(entity)
+    local start = GetEntityCoords(entity)
+    local x,y,z = start-GetOffsetFromEntityInWorldCoords(entity,2.0,0.0,0.0),start-GetOffsetFromEntityInWorldCoords(entity,0.0,2.0,0.0),start-GetOffsetFromEntityInWorldCoords(entity,0.0,0.0,2.0)
+    local x1,x2,y1,y2,z1,z2 = start-x,start+x,start-y,start+y,start-z,start+z
+    DrawLine(x1.x,x1.y,x1.z,x2.x,x2.y,x2.z,255,0,0,255)
+    DrawLine(y1.x,y1.y,y1.z,y2.x,y2.y,y2.z,0,0,255,255)
+    DrawLine(z1.x,z1.y,z1.z,z2.x,z2.y,z2.z,0,255,0,255)
+end
+
+function RegisterEntity(entity,scene,options)
+    options = options or {}
+    scene = options.scene or scene
+    local newEntity = {
+        entity=entity, -- def 0 for exports
+        data = {
+            type = GetEntityType(entity),
+            model = GetEntityModel(entity),
+            coords = GetEntityCoords(entity),
+            rotation = GetEntityRotation(entity)or vector3(0,0,0),
+            network = NetworkGetEntityIsNetworked(entity),
+            mission = IsEntityAMissionEntity(entity),
+            door = false,
+            id = options.id or tostring(math.random(99999)),
+            scene = tostring(scene)or'0'
+        }
+    }
+    table.insert(Entities, newEntity)
+    C_Entities[entity] = newEntity
+end
+
+function SetEntityScene(entity,scene)
+    C_Entities[entity].data.scene = scene or C_Scene
+end
+
+function GetEntityFromName(name)
+    name = tostring(name)
+    for k,v in pairs(C_Entities) do
+        if v.data.id==name then return k end
+    end
+    return 0
+end
+
+function RemoveEntity(entity)
+    if not C_Entities[entity]then return end
+    local tab = C_Entities[entity]
+    for i=1,#Entities do
+        if Entities[i]==tab then
+            table.remove(Entities, i)
+            break
+        end
+    end
+    C_Entities[entity] = nil
+    DeleteNetworkedEntity(entity)
+end
