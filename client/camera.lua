@@ -261,6 +261,7 @@ local function UpdateCamera()
             _internal_acc(_internal_camera)
         end
         SetFreecamActive(false)
+        return
     end
 
     if IsControlJustPressed(0, CONTROLS.BACKSPACE) then
@@ -268,6 +269,7 @@ local function UpdateCamera()
             _internal_bac(_internal_camera)
         end
         SetFreecamActive(false)
+        return
     end
 
     local vecX, vecY = GetFreecamMatrix()

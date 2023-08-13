@@ -46,7 +46,10 @@ function EnsureWorkspace() {
                 RemoveSceneDropdownForm();
                 if(ret==='add'){
                     const wENT = GetEntitiesNames(workspace_ent);
-                    if(wENT.length===0)return;
+                    if(wENT.length===0){
+                        SendError('All Entities Currently In Use!');
+                        return;
+                    };
                     CreateNewForm([{
                         name: 'add entity',
                         default: 'id',
@@ -101,7 +104,10 @@ function AddWorkspaceHeaderElement(name) {
                 delete(newHeaderElement);
             } else if(ret==='send') {
                 const wCAT = GetCategoriesNames({[newHeaderElement.id]:true});
-                if(wCAT.length===0)return;
+                if(wCAT.length===0){
+                    SendError('No Other Categories Available!');
+                    return;
+                };
                 CreateNewForm([{
                     name: 'add entity',
                     default: 'id',
@@ -153,6 +159,7 @@ function AddWorkspaceCategoryElement(name, id) {
     if(workspace_ent.hasOwnProperty(name)||!workspace_cat.hasOwnProperty(id))return;
     const element = document.createElement('div');
     element.classList.add('workspace-main-category-element');
+    element.classList.add('hide-content');
     element.innerHTML = CategoryElementHTML.replace('$NAME',name);
     const newCategory = {
         name: name,
@@ -170,7 +177,10 @@ function AddWorkspaceCategoryElement(name, id) {
             toWait=false;
             if(ret==='change') {
                 const wCAT = GetCategoriesNames({[newCategory.id]:true});
-                if(wCAT.length===0)return;
+                if(wCAT.length===0){
+                    SendError('No Other Categories Available!');
+                    return;
+                };
                 CreateNewForm([{
                     name: 'add entity',
                     default: 'id',
@@ -230,18 +240,35 @@ function ChangeWorkspaceSingleElementCategory(from,to,elem,e_id) {
     toCategory.container.append(elem.DOM);
 };
 
+function WorkspaceFocusOnElement(name) {
+    const ent = workspace_ent[name];
+    if(!ent)return;
+    const Element = workspace_cat[ent.id].DOM;
+    if(workspaceLast)workspaceLast.classList.add('workspace-hide');
+    if(workspaceLastActive)workspaceLastActive.classList.remove('workspace-active');
+    Element.classList.add('workspace-active');
+    workspaceLast=document.getElementById(workspace_ent[name].id);
+    workspaceLastActive=Element;
+    workspaceLast.classList.remove('workspace-hide');
+    DragElement(ent.DOM);
+};
+
 const DynamicConfigCBs = {
     name: (prev,now,e)=>{
-        if(QuickAccess.hasOwnProperty(now)){
-            e.value=prev;
-            return;
-        };
-        const elem = GetQuickElement(prev);
-        elem.name = now;
-        elem.DOM.querySelector('.element-name').textContent="ID: "+now;
-        ChangeQuickElement(prev,now);
-        e.parentNode.parentNode.parentNode.querySelector('.category-element-header>span').textContent = now;
-        post('update_entity_name', {name: prev, new: now, scene_id: elem.scene_id});
+        setTimeout(()=>{
+            if(QuickAccess.hasOwnProperty(now)){
+                e.value=prev;
+                return false;
+            };
+            const elem = GetQuickElement(prev);
+            elem.name = now;
+            elem.DOM.querySelector('.element-name').textContent="ID: "+now;
+            ChangeQuickElement(prev,now);
+            e.parentNode.parentNode.parentNode.querySelector('.category-element-header>span').textContent = now;
+            workspace_ent[now]=workspace_ent[prev];
+            delete(workspace_ent[prev]);
+            post('update_entity_name', {name: prev, new: now, scene_id: elem.scene_id});
+        }, Math.floor(Math.random()*50))
     },
     coords: (prev,value,e)=>{
         let [x,y,z] = value.split(',').map(parseFloat);
@@ -249,7 +276,7 @@ const DynamicConfigCBs = {
             e.value = prev;
             return;
         };
-        post('update_entity_coords', {name: e.parentNode.querySelector('span').textContent, coords: {x:x, y:y, z:z}});
+        post('update_entity_coords', {name: e.querySelector('.category-element-header>span')?.textContent||e.parentNode.parentNode.parentNode.querySelector('.category-element-header>span').textContent, coords: {x:x, y:y, z:z}});
     },
     rot: (prev,value,e)=>{
         let [x,y,z] = value.split(',').map(parseFloat);
@@ -257,7 +284,13 @@ const DynamicConfigCBs = {
             e.value = prev;
             return;
         };
-        post('update_entity_rotation', {name: e.parentNode.querySelector('span').textContent, rot: {x:x, y:y, z:z}});
+        post('update_entity_rotation', {name: e.querySelector('.category-element-header>span')?.textContent||e.parentNode.parentNode.parentNode.querySelector('.category-element-header>span').textContent, rot: {x:x, y:y, z:z}});
+    },
+    mission: (value,e)=>{
+        post('update_entity_mission', {name: e.querySelector('.category-element-header>span')?.textContent||e.parentNode.parentNode.parentNode.querySelector('.category-element-header>span').textContent, value: value});
+    },
+    network: (value,e)=>{
+        post('update_entity_network', {name: e.querySelector('.category-element-header>span')?.textContent||e.parentNode.parentNode.parentNode.querySelector('.category-element-header>span').textContent, value: value});
     }
 };
 
@@ -265,15 +298,39 @@ function SetupDynamicConfigElement(elem) {
     const name = elem.querySelector('input[name="name"]');
     const coords = elem.querySelector('input[name="coords"]');
     const rot = elem.querySelector('input[name="rot"]');
-    const iterable = [name,coords,rot];
+    const mission = elem.querySelector('input[name="mission"]');
+    const network = elem.querySelector('input[name="network"]');
+    const iterable = [name,coords,rot,mission,network];
     iterable.forEach(r=>{
-        r.addEventListener('keydown', (e)=>{
-            const prev = e.target.value;
-            setTimeout(()=>{
-                if(prev===e.target.value)return;
-                if(DynamicConfigCBs[e.target.name])DynamicConfigCBs[e.target.name](prev,e.target.value,r);
-            },1);
-        });
+        if(r.type==='text'){
+            r.addEventListener('keydown', (e)=>{
+                const prev = e.target.value;
+                setTimeout(()=>{
+                    if(prev===e.target.value)return;
+                    if(DynamicConfigCBs[e.target.name])DynamicConfigCBs[e.target.name](prev,e.target.value,r);
+                },1);
+            });
+        } else if(r.type==='checkbox'){
+            r.addEventListener('click', (e)=>{
+                if(DynamicConfigCBs[e.target.name])DynamicConfigCBs[e.target.name](e.target.checked,r)
+            });
+        };
+    });
+};
+
+function WorkspaceUpdateData(data) {
+    const entity = data.entity;
+    const element = workspace_ent[entity].DOM
+    Object.keys(data).forEach((e)=>{
+        if(!DynamicConfigCBs[e])return;
+        if(e=='mission'||e=='network'){
+            DynamicConfigCBs[e](data[e],element);
+            element.querySelector(`input[name="${e}"]`).checked = data[e];
+        } else {
+            const r = element.querySelector(`input[name="${e}"]`);
+            if(DynamicConfigCBs[e](r.value,data[e],element)===false)return;
+            r.value = data[e];
+        };
     });
 };
 
@@ -289,6 +346,7 @@ document.addEventListener('removed-entity', (e)=>{
             break;
         };
     };
+    delete(QuickAccess[id]);
     delete(workspace_ent[id]);
 });
 

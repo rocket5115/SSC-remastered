@@ -13,6 +13,11 @@ function RaycastGameplayCamera(distance,camera)
     return b, c, e
 end
 
+function RoundNumber(number, decimal)
+    local power = 10 ^ decimal
+    return math.floor(number * power + 0.5) / power
+end
+
 --[[
     Objects/Peds/Vehicles
 ]]--
@@ -142,4 +147,108 @@ function RemoveEntity(entity)
     end
     C_Entities[entity] = nil
     DeleteNetworkedEntity(entity)
+end
+
+function GetEntitiesInScene(scene)
+    local retval = {}
+    for k,v in pairs(C_Entities) do
+        if v.data.scene == scene then
+            retval[#retval+1] = v
+        end
+    end
+    return retval
+end
+
+function EnsurePlayerPosition(coords)
+    local ped = PlayerPedId()
+    local c = GetEntityCoords(ped)
+    if #(c-coords)<100.0 then
+        return true
+    end
+    FreezeEntityPosition(ped,true)
+    SetEntityCoords(ped, coords.x, coords.y, coords.z+1.0, false, false, false, false)
+    local requests = 0
+    while not HasCollisionLoadedAroundEntity() and requests<100 do
+        Wait(100)
+        requests=requests+1
+    end
+    local found,z = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, true)
+    if found then
+        SetEntityCoords(ped, coords.x, coords.y, z, false, false, false, false)
+    end
+    FreezeEntityPosition(ped,false)
+    return true
+end
+
+function RetrieveTemplateData()
+    local fEntity
+    local retval = {}
+    for k,v in pairs(C_Entities) do
+        if not fEntity then
+            fEntity = v.entity
+            retval[1] = {
+                model = v.data.model,
+                type = v.data.type,
+                rotation = v.data.rotation,
+                network = v.data.network,
+                mission = v.data.mission,
+                rOffset = 0.0,
+                offset = vector3(0.0,0.0,0.0),
+                id = v.data.id
+            }
+        else
+            retval[#retval+1] = {
+                model = v.data.model,
+                type = v.data.type,
+                rotation = v.data.rotation,
+                network = v.data.network,
+                mission = v.data.mission,
+                rOffset = v.data.rotation.z - retval[1].rotation.z,
+                offset = GetOffsetFromEntityGivenWorldCoords(fEntity, table.unpack(GetEntityCoords(v.entity))),
+                id = v.data.id
+            }
+        end
+    end
+    return retval
+end
+
+function CreateTemplateEntities(data, c)
+    local first = data[1]
+    local fCoords
+    for k,v in ipairs(data) do
+        local coords
+        if k==1 then
+            coords = c
+        else
+            coords = GetOffsetFromEntityInWorldCoords(data[1].entity, v.offset.x, v.offset.y, v.offset.z)
+        end
+        if v.type==1 or v.type==2 then
+            if v.type == 1 then
+                v.entity = CreateLocalPed(coords.x, coords.y, coords.z - 1.0, v.rotation.z, v.model, v.network, v.mission, {id="TE"..math.random(99999)})
+            elseif v.type == 2 then
+                v.entity = CreateLocalVehicle(coords.x, coords.y, coords.z, v.rotation.z, v.model, v.network, v.mission, {id="TE"..math.random(99999)})
+            end
+        elseif v.type==3 then
+            v.entity = CreateLocalObject(coords.x, coords.y, coords.z, v.model, v.network, v.mission, false, {id="TE"..math.random(99999)})
+        end
+        data[k].id = C_Entities[v.entity].data.id
+        SetEntityRotation(v.entity, v.rotation.x, v.rotation.y, v.rotation.z)
+        FreezeEntityPosition(v.entity, true)
+    end
+    return data
+end
+
+function SetTemplatePosition(data, c, r)
+    local rot = GetEntityRotation(data[1].entity)
+    SetEntityRotation(data[1].entity, rot.x, rot.y, r)
+    for k,v in ipairs(data) do
+        local coords
+        if k==1 then
+            coords = c
+        else
+            coords = GetOffsetFromEntityInWorldCoords(data[1].entity, v.offset.x, v.offset.y, v.offset.z)
+        end
+        SetEntityCoords(v.entity, (v.type==1 and k~=1) and coords - vector3(0.0,0.0,1.0) or coords)
+        SetEntityRotation(v.entity, v.rotation.x, v.rotation.y, r-v.rOffset)
+    end
 end

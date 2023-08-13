@@ -1,0 +1,67 @@
+.informations {
+    position: absolute;
+    width: 200px;
+    top: 20px;
+    left: 20px;
+    background-color: rgba(10, 10, 10, 0.959);
+    border-radius: 10px;
+    display: grid;
+    grid-template-rows: 50px calc(100% - 54px);
+    padding: 2px;
+    -webkit-box-shadow: 0px 0px 10px 2px rgb(24, 112, 212);
+    -moz-box-shadow: 0px 0px 10px 2px rgb(24, 112, 212);
+    box-shadow: 0px 0px 10px 2px rgb(24, 112, 212);
+    z-index: 5;
+}
+
+.info-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+}
+
+.info-title:hover {
+    cursor: pointer;
+}
+
+.info-main {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.info-main>* {
+    border-top: 1px rgba(255, 255, 255, 0.582) solid;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.info-slider {
+    display: grid;
+    grid-template-columns: 50% 50%;
+}
+
+.info-slider>div:nth-child(2) {
+    display: grid;
+    grid-template-columns: 15px 50px 15px;
+}
+
+.info-slider>div:nth-child(2)>* {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+}
+
+.info-slider>div:nth-child(2)>div:not(:nth-child(2)):hover {
+    cursor: pointer;
+}
+
+.info-slider>* {
+    display: flex;
+    justify-content: center;
+}

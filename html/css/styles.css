@@ -1,11 +1,34 @@
+::-webkit-scrollbar {
+    width: 2px; /* Set the width of the scrollbar */
+    height: 5px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: #888; /* Set the color of the thumb (the draggable part) */
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #555; /* Set the color of the thumb when hovering over it */
+  }
+  
+  /* For Firefox */
+  /* Note: Firefox scrollbar is not very customizable. */
+  /* You can only set the color of the thumb. */
+  /* If you want more customization, you may need to use a custom scrollbar library. */
+  * {
+    scrollbar-color: #5d5959 #f1f1f1; /* Set the color of the thumb and the track */
+  }
+
 :root {
-    --width: 80%;
+    --width: 80vw;
+    --body-vw-value: 80vw;
     --height: 80%;
     --header-height: 10%;
     --list-width: 200px;
     --main-bg-color: rgba(42, 41, 41, 0.914);
     --main-bg-color-dark: rgba(17, 17, 17, 0.914);
     --main-bg-color-light: rgba(113, 113, 113, 0.759);
+    --font-default: 16px;
 }
 
 html {
@@ -19,7 +42,7 @@ html>*:not(input) {
 html>* {
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
     font-weight: bold;
-    font-size: 16px;
+    font-size: var(--font-default);
     color: whitesmoke;
 }
 
@@ -75,6 +98,7 @@ body {
 
 .G_Container>div.body {
     display: grid;
+    max-width: var(--body-vw-value) !important;
     grid-template-columns: var(--list-width) calc((100% - var(--list-width)) - 3px);
     gap: 3px;
 }
@@ -95,6 +119,7 @@ ul {
     position: relative;
     display: inline-block;
     min-width: 100px;
+    z-index: 4;
 }
 
 .dropbtn {
@@ -115,7 +140,6 @@ ul {
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     width: 100%;
     top: 100%;
-    z-index: 2;
 }
   
 .dropdown-content li {
@@ -141,6 +165,7 @@ div.list {
     display: flex;
     flex-direction: column;
     background-color: rgb(37, 30, 30);
+    overflow: auto;
 }
 
 div.list>div.scene-wrapper {
@@ -201,10 +226,10 @@ div.list>div.scene-wrapper>div.wrapper-content>div.wrapper-element:hover {
     flex-direction: column;
     gap: 25px;
     width: 250px;
-    height: calc(100% - 40px);
+    max-height: calc(100% - 40px);
     top: 20px;
     left: calc(100% - 270px);
-    z-index: 4;
+    z-index: 5;
 }
 
 .notifications-element {
@@ -218,11 +243,10 @@ div.list>div.scene-wrapper>div.wrapper-content>div.wrapper-element:hover {
     color: rgb(242, 242, 242);
     padding: 5px;
     border-radius: 5px;
-    z-index: 4;
 }
 
 .notif-desc {
-    font-size: 13px;
+    font-size: calc(var(--font-default) - 3px);
     color: rgb(199, 199, 199);
 }
 
@@ -232,4 +256,19 @@ div.list>div.scene-wrapper>div.wrapper-content>div.wrapper-element:hover {
     left: -5px;
     width: calc(100% + 10px);
     overflow: hidden;
+}
+
+.select-selected {
+    background-color: rgba(66, 161, 2, 0.76);
+}
+
+.select-selected:hover {
+    cursor: pointer !important;
+    background-color: rgb(24, 112, 28) !important;
+}
+
+.select-box {
+    position: absolute;
+    background-color: rgba(0, 255, 255, 0.253);
+    border: 1px rgba(0, 255, 213, 0.719) solid;
 }

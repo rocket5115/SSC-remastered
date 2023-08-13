@@ -3,12 +3,12 @@ let notifications;
 function EnsureNotifications() {
     if(notifications)return;
     notifications = document.querySelector('.notifications');
-    AddNotification({
+    /*AddNotification({
         title: 'Information',
         message: 'SSC Notifications successfully loaded',
         time: 5000,
         color: 'yellow'
-    })
+    })*/
 };
 
 function AddNotification(options={}) {

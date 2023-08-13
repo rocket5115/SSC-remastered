@@ -12,8 +12,7 @@ const InnerChildForm = `
     <div class="fa-solid fa-x" onclick="RemoveSceneDropdownForm()"></div>
     <div class="scene-form-container">
         <div onclick="SelectedFormOption('select')">Select</div>
-        <div onclick="SelectedFormOption('change')">Change Name</div>
-        <div onclick="SelectedFormOption('change2')">Change Scene</div>
+        <div onclick="SelectedFormOption('focus')">Focus In Workspace</div>
         <div onclick="SelectedFormOption('go_to')">Go To</div>
         <div onclick="SelectedFormOption('delete')">Delete</div>
     </div>
@@ -111,7 +110,7 @@ const CategoryElementOptions = `
 const CategoryElementHTML = `
     <div class="category-element-header">
         <span>$NAME</span>
-        <div class="wrapper-hide-show fa-solid fa-arrow-down" onclick="ChangeSceneDropdownState(this)"></div>    
+        <div class="wrapper-hide-show fa-solid fa-arrow-down" style="animation: rotate-to-hide 0s forwards;" onclick="ChangeSceneDropdownState(this)"></div>    
     </div>
     <div class="category-element-main"></div>
 `;
@@ -129,3 +128,24 @@ const InnerNotification = `
     <div class="notif-desc">$DESC</div>
     <div class="notif-time" style="background-color:$COLOR"></div>
 `;
+
+const InnerSelectForm = `
+    <div class="fa-solid fa-x" onclick="RemoveSceneDropdownForm()"></div>
+    <div class="scene-form-container">
+        <div onclick="SelectedFormOption('stop2')">(All)Stop Selecting</div>
+        <div onclick="SelectedFormOption('change2')">(All)Change Scene</div>
+        <div onclick="SelectedFormOption('send2')">(All)Create and Change Scene</div>
+        <div onclick="SelectedFormOption('delete2')">(All)Delete</div>
+    </div>
+`;
+
+const InnerInformation = `
+    <div class="info-title">$TITLE</div>
+    <div class="info-main"></div>
+`;
+
+const InformationTypes = {
+    'text': 'info-text',
+    'slider': 'info-slider',
+    'var': 'info-var'
+};

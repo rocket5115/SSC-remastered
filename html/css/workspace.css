@@ -16,17 +16,21 @@
     -webkit-box-shadow: 0px 1px 0px 0px rgba(66, 68, 90, 1);
     -moz-box-shadow: 0px 1px 0px 0px rgba(66, 68, 90, 1);
     box-shadow: 0px 1px 0px 0px rgba(66, 68, 90, 1);
+    overflow-x: auto;
 }
 
 .workspace>.workspace-header>.workspace-header-element {
     position: relative;
     width: 100px;
-    height: 25px;
+    height: 24px;
+    border: 1px solid rgb(212, 204, 204);
     user-select: none;
     background-color: rgb(37, 30, 30);
     text-align: center;
     line-height: 25px;
     transition: 150ms ease-in-out;
+    z-index: 3;
+    white-space: nowrap;
 }
 
 .workspace>.workspace-header>.workspace-header-element:hover {
@@ -49,6 +53,7 @@
 }
 
 .workspace-main-category>div {
+    font-size: var(--font-default);
     position: absolute;
     min-width: 100px;
     background-color: rgba(74, 74, 74, 0.785);
@@ -56,6 +61,12 @@
     -webkit-box-shadow: 0px 0px 3px 2px var(--main-bg-color-light);
     -moz-box-shadow: 0px 0px 3px 2px var(--main-bg-color-light);
     box-shadow: 0px 0px 3px 2px var(--main-bg-color-light);
+}
+
+.workspace-main-category-element>div>*>input {
+    font-size: var(--font-default);
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
 }
 
 .workspace-main-category-element {

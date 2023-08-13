@@ -23,6 +23,9 @@ client_scripts {
 }
 
 server_scripts {
+    'session.lua',
+    'attachments/*.lua',
+    'configs/config.lua',
     'configs/config_s.lua',
     'server/functions.lua',
     'server/server.lua'

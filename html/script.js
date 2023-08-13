@@ -18,7 +18,7 @@ function SendEvent(name, data) {
 
 const post = (cb,data) => {
     Config.debug&&console.log("POST: "+cb+":",JSON.stringify(data));
-    try {
+    try { // for testing on Browser
         return $.post('https://'+GetParentResourceName()+'/'+cb,data?JSON.stringify(data):"{}");
     } catch(err) {};
 };
@@ -31,6 +31,12 @@ document.addEventListener('contextmenu', function(e) {
         };
         wait=false;
     },10);
+});
+
+document.addEventListener('keydown', function(e) {
+    if(e.key==='Escape'){
+        post('nuioff');
+    };
 });
 
 const Scenes = {};
@@ -175,27 +181,8 @@ function AddSceneElement(id, type, name) {
         wait=true;
         CreateSceneDropdownForm(e.clientX,e.clientY,(ret)=>{
             RemoveSceneDropdownForm();
-            if(ret==='change') {
-                CreateNewForm([{name: 'name', default: e.target.textContent.substring(4,e.target.textContent.length), type: 'text'}], (r)=>{
-                    if(newTable.name===r.name||QuickAccess.hasOwnProperty(r.name))return;
-                    SendEvent('entity-name-changed', {old: newTable.name, new: r.name});
-                    post('update_entity_name', {name: newTable.name, new: r.name, scene_id: newTable.scene_id});
-                    newTable.name = r.name;
-                    e.target.textContent = 'ID: '+r.name;
-                });
-            } else if(ret==='change2'){
-                const names = GetSceneNames({['Scene: '+newTable.scene_id]:true});
-                if(names.length===0)return;
-                CreateNewForm([{
-                    name: 'new scene',
-                    default: 'id',
-                    type: 'list',
-                    data: names
-                }], (r)=>{
-                    if(newTable.scene_id==r.id)return;
-                    MoveSingleChildToScene(element, Scenes['Scene: '+newTable.scene_id], Scenes['Scene: '+r.id]);
-                    newTable.scene_id=r.id;
-                });
+            if(ret==='focus'){
+                WorkspaceFocusOnElement(newTable.name);
             } else if(ret==='go_to'){
                 post('go_to_entity', {name: newTable.name})
             } else if(ret==='delete'){
@@ -210,19 +197,80 @@ function AddSceneElement(id, type, name) {
                 SendEvent('removed-entity', {name: newTable.name});
                 post('remove_entity', {name: newTable.name});
                 delete(newTable);
+            } else if(ret==='select'){
+                StartSelect(Scenes['Scene: '+newTable.scene_id].children, e);
+                newTable.DOM.classList.add('select-selected');
+            } else if(ret==='stop2') {
+                StopSelect();
+            } else if(ret==='change2') {
+                const elems = SelectRetrieveSelected();
+                if(elems.length===0){
+                    SendError('No Elements Selected!');
+                    return;
+                };
+                const wCAT = GetSceneNames({["Scene: "+newTable.scene_id]:true});
+                if(wCAT.length===0){
+                    SendError('No Other Scenes Available!');
+                    return;
+                };
+                CreateNewForm([{
+                    name: 'New Scene',
+                    default: 'id',
+                    type: 'list',
+                    data: wCAT
+                }], (e)=>{
+                    const id = newTable.scene_id;
+                    elems.forEach(elem=>{
+                        MoveSingleChildToScene(elem.DOM, Scenes['Scene: '+id], Scenes['Scene: '+e.id]);
+                    });
+                    StopSelect();
+                });
+            } else if(ret==='send2') {
+                const elems = SelectRetrieveSelected();
+                if(elems.length===0)return;
+                CreateNewForm([
+                    {name: 'name', default: 'new-scene', type: 'text'}
+                ], (e)=>{
+                    if(Scenes['Scene: '+e.name])return;
+                    CreateSceneInstance(e.name);
+                    const id = newTable.scene_id;
+                    elems.forEach(elem=>{
+                        MoveSingleChildToScene(elem.DOM, Scenes['Scene: '+id], Scenes['Scene: '+e.name]);
+                    });
+                    StopSelect();
+                });
+            } else if(ret==='delete2') {
+                const elems = SelectRetrieveSelected();
+                if(elems.length===0)return;
+                const id = newTable.scene_id;
+                elems.forEach(elem=>{
+                    elem.DOM.remove();
+                    const children = Scenes['Scene: '+id].children;
+                    for(let i=0;i<children.length;i++){
+                        if(children[i].DOM===elem.DOM){
+                            children.splice(i,1);
+                            break;
+                        };
+                    };
+                    SendEvent('removed-entity', {name: elem.data.name});
+                    post('remove_entity', {name: elem.data.name});
+                });
             };
-        },InnerChildForm);
+        },element.classList.contains('select-selected')?InnerSelectForm:InnerChildForm);
     });
     return element;
 };
 
 $(document).ready(function(){
-    EnsureDraggable();
+    EnsureDraggable(); //draggable.js <shadowElement>
     EnsureWorkspace(); //workspace.js
     EnsureNotifications(); //notifications.js
     //Ensure List Element(Scenes,events)
     CreateSceneInstance(0,true);
-    AddSceneElement(0,1,'test')
+    //CreateSceneInstance(1,true);
+    /*AddSceneElement(1,1,'ok');
+    AddSceneElement(1,1,'ok2');
+    AddSceneElement(1,1,'ok3');*/
     document.querySelector('.list').addEventListener('contextmenu', function(e) {
         if(!wait){
             CreateSceneDropdownForm(e.clientX, e.clientY, (ret)=>{
@@ -245,6 +293,10 @@ $(document).ready(function(){
 
 function AddEntity(type) {
     CreateNewForm(Options[type], (e)=>{post('spawn_entity', {type: type, model: e.model, mission: e.mission, network: e.network, door: e.door})});
+};
+
+function GetRelativePositionInPercent(cx,cy,rx,ry) {
+    return [(cx / rx).toFixed(2),(cy / ry).toFixed(2)];
 };
 
 window.addEventListener('message', function (event) {
@@ -272,7 +324,31 @@ window.addEventListener('message', function (event) {
         });  
         CreateSceneInstance(0,true);
     } else if(data.type==='notification'){
-        AddNotification(data.options);
+        AddNotification(data.options?data.options:data); // done for my screw up in Lua part
+    } else if(data.type==='update_entity'){
+        WorkspaceUpdateData(data.data);
+    } else if(data.type==='information'){
+        SetInformation(data.data);
+    } else if(data.type==='d_information'){
+        RemoveInformation();
+    } else if(data.type==='info_update_slider'){
+        InfoSetSlider(data.name, data.value);
+        if(data.ids) {
+            InfoSetVars(data.ids);
+        };
+    } else if(data.type==='remove_entity'){
+        const newTable = GetQuickElement(data.entity);
+        newTable.DOM.remove();
+        const children = Scenes['Scene: '+newTable.scene_id].children;
+        for(let i=0;i<children.length;i++){
+            if(children[i].data===newTable){
+                children.splice(i,1);
+                break;
+            };
+        };
+        SendEvent('removed-entity', {name: newTable.name});
+        post('remove_entity', {name: newTable.name});
+        delete(newTable);
     };
 });
 

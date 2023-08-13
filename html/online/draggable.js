@@ -37,7 +37,7 @@ document.addEventListener('mousemove', (e)=>{
 
 function DragElement(elem,parent) {
     if(free)free.classList.remove('drag-priority');
-    free=parent===2?elem.taget.parentNode.parentNode:parent?elem.target.parentNode:elem.target?elem.target:elem;
+    free=parent?elem.parentNode:parent===2?elem.target.parentNode.parentNode:parent?elem.target.parentNode:elem.target?elem.target:elem;
     if(free)free.classList.add('drag-priority');
     MoveMouseElement();
 };
@@ -76,7 +76,7 @@ class Draggable {
             DragElement(shadowElement);
             shadowElement.style.display = 'block';
             this.interval = setInterval(()=>{
-                if(this.dragging){
+                if(this.dragging&&!Selecting){
                     if(moved){
                         moved=false;
                         this.isX ?
