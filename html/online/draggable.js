@@ -7,23 +7,54 @@ let [x,y] = [0,0]
 let moved = false;
 let free = null;
 let shadowElement = null;
+let resize = null;
+let listen = null;
 
 document.addEventListener('mouseup', ()=>{
     if(free)free.classList.remove('drag-priority');
     free=null;
+    resize=null;
+    listen=null;
 });
 
 function MoveMouseElement() {
     const container = free.parentNode;
+    const multiplier = container.classList.length===0&&40||0;
     const bcr = container.getBoundingClientRect();
-    const offsetX = x - bcr.x - free.getBoundingClientRect().width / 2;
+    const fbcr = free.getBoundingClientRect()
+    const offsetX = x - bcr.x - fbcr.width / 2;
     const offsetY = y - bcr.y - 10;
-    const maxX = bcr.width - free.getBoundingClientRect().width;
-    const maxY = bcr.height - free.getBoundingClientRect().height;
+    const maxX = (bcr.width - fbcr.width)-multiplier;
+    const maxY = (bcr.height - fbcr.height)-multiplier;
     const adjustedX = Math.min(Math.max(offsetX, 0), maxX);
     const adjustedY = Math.min(Math.max(offsetY, 0), maxY);
 
     free.style.transform = `translate(${adjustedX}px, ${adjustedY}px)`;
+};
+
+const resizesMin = {};
+
+function ResizeMenuElement() {
+    const bcr = resize.getBoundingClientRect();
+    let id = resize.id;
+    if(!resizesMin.hasOwnProperty(id)){
+        resizesMin[id] = {x: bcr.width, y: bcr.height};
+    };
+    const min = resizesMin[id];
+    const [initialX,initialY] = [bcr.x+min.x,bcr.y+min.y];
+    let [xDif,yDif] = [0,0];
+    if(x >= initialX) {
+        xDif = x-initialX;
+    };
+    if(y >= initialY) {
+        yDif = y-initialY;  
+    };
+    if(x===0&&y===0)return;
+    const container = resize.parentNode.getBoundingClientRect();
+    const xFinal = Math.min(container.width - 40, (initialX-bcr.x)+xDif);
+    const yFinal = Math.min(container.height - 40, (initialY-bcr.y)+yDif);
+    resize.style.width = `${xFinal}px`;
+    resize.style.height = `${yFinal}px`;
 };
 
 document.addEventListener('mousemove', (e)=>{
@@ -32,8 +63,29 @@ document.addEventListener('mousemove', (e)=>{
     if(free){
         MoveMouseElement();
     };
+    if(resize){
+        ResizeMenuElement();
+    };
+    if(listen){
+        listen(x,y);
+    };
 });
 
+function MoveListen(cb) {
+    listen = cb;
+};
+
+function ResizeMenu(e,min) {
+    resize = e;
+    let id = resize.id;
+    if(!id) {
+        resize.id = `RS${Math.random().toFixed(4)}`;
+        id = resize.id;
+    };
+    if(min){
+        resizesMin[id]=min;
+    };
+};
 
 function DragElement(elem,parent) {
     if(free)free.classList.remove('drag-priority');

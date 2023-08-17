@@ -1,23 +1,19 @@
 ::-webkit-scrollbar {
-    width: 2px; /* Set the width of the scrollbar */
+    width: 2px;
     height: 5px;
-  }
+}
   
-  ::-webkit-scrollbar-thumb {
-    background-color: #888; /* Set the color of the thumb (the draggable part) */
-  }
+::-webkit-scrollbar-thumb {
+    background-color: #888;
+}
+ 
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
   
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: #555; /* Set the color of the thumb when hovering over it */
-  }
-  
-  /* For Firefox */
-  /* Note: Firefox scrollbar is not very customizable. */
-  /* You can only set the color of the thumb. */
-  /* If you want more customization, you may need to use a custom scrollbar library. */
-  * {
-    scrollbar-color: #5d5959 #f1f1f1; /* Set the color of the thumb and the track */
-  }
+* {
+    scrollbar-color: #5d5959 #f1f1f1;
+}
 
 :root {
     --width: 80vw;
@@ -29,6 +25,7 @@
     --main-bg-color-dark: rgba(17, 17, 17, 0.914);
     --main-bg-color-light: rgba(113, 113, 113, 0.759);
     --font-default: 16px;
+    --body-opacity: 1;
 }
 
 html {
@@ -54,6 +51,7 @@ body {
     margin: 0%;
     width: 100vw;
     height: 100vh;
+    opacity: var(--body-opacity);
 }
 
 .drag-priority {
@@ -101,6 +99,17 @@ body {
     max-width: var(--body-vw-value) !important;
     grid-template-columns: var(--list-width) calc((100% - var(--list-width)) - 3px);
     gap: 3px;
+}
+
+.G_Container>div.header>div:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+}
+
+.G_Container>div.header>div:first-child:hover {
+    cursor: pointer;
 }
 
 .G_Container>div.header>div.header-options {

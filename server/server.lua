@@ -1,6 +1,5 @@
 if GConfig.Enable then
     Current_Sessions = {}
-    Current_Templates = {}
 
     RegisterNetEvent('SSC:Server:CreateSession', function(id,_src,ov)
         local src = _src or source
@@ -16,7 +15,6 @@ if GConfig.Enable then
                     }
                 }
             }
-            Current_Templates[src]=false
             SaveFile('_SSC_Session_'..id,{id = id, scenes = Current_Sessions[uid].scenes},src)
             TriggerClientEvent('SSC:Client:LoadSession', src, Current_Sessions[uid])
         elseif Current_Sessions[uid].id == id then
@@ -44,9 +42,8 @@ if GConfig.Enable then
         if Current_Sessions[uid] then
             TriggerClientEvent('SSC:Client:UnloadSession', src, Current_Sessions[uid])
             Current_Sessions[uid]=nil
-            Current_Templates[src]=false
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -63,7 +60,7 @@ if GConfig.Enable then
             end
             SaveFile('_SSC_Session_'..(id and id or Current_Sessions[uid].id),Current_Sessions[uid],src)
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -74,7 +71,7 @@ if GConfig.Enable then
             table.insert(Current_Sessions[uid].scenes[data.scene].Entities, data)
             TriggerEvent('SSC:Server:SaveSession', src)
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -91,7 +88,7 @@ if GConfig.Enable then
             end
             TriggerEvent('SSC:Server:SaveSession', src)
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -102,7 +99,7 @@ if GConfig.Enable then
             Current_Sessions[uid].scenes[name]=Current_Sessions[uid].scenes[name]or{Entities={}}
             TriggerEvent('SSC:Server:SaveSession', src)
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -113,7 +110,7 @@ if GConfig.Enable then
             Current_Sessions[uid].scenes[name]=nil
             TriggerEvent('SSC:Server:SaveSession', src)
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -131,7 +128,7 @@ if GConfig.Enable then
             end
             TriggerEvent('SSC:Server:SaveSession', src)
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -147,7 +144,7 @@ if GConfig.Enable then
             end
             TriggerEvent('SSC:Server:SaveSession', src)
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -163,7 +160,7 @@ if GConfig.Enable then
             end
             TriggerEvent('SSC:Server:SaveSession', src)
         else
-            if not Current_Templates[src] then SendError(src, 'Session not loaded. Any Changes will not be saved!') end
+            SendError(src, 'Session not loaded. Any Changes will not be saved!')
         end
     end)
 
@@ -187,37 +184,66 @@ if GConfig.Enable then
     RegisterNetEvent('SSC:Server:load_template', function(name)
         local src = source
         local uid = GetUniqueId(src)
-        if Current_Sessions[uid] and Current_Sessions[uid].id~='TEMP' then
-            SendError(src, 'Session is currently loaded, please unload before proceeding.')
+        if not Current_Sessions[uid] then
+            SendError(src, 'Session not loaded. Template cannot be loaded.')
         else
-            if not Current_Sessions[uid] then
-                TriggerEvent('SSC:Server:CreateSession', 'TEMP', src, true) -- id, source, overwrite file
-            end
             local temp = RetrieveFile('_SSC_Template_'..name, src)
             if temp then
                 if #temp == 0 then
                     return
                 else
-                    Current_Templates[src]=true
                     TriggerClientEvent('SSC:Client:load_template', src, temp)
                 end
             end
         end
     end)
 
-    RegisterCommand('savetemplatescene', function(source,args)
+    RegisterNetEvent('SSC:Server:RetrieveTemplates', function()
         local src = source
         local uid = GetUniqueId(src)
-        if not args[1] or args[1]=="" then
-            SendError(src, 'Invalid Name for session')
-            return
+        local retval = {}
+        for name in pairs(Files) do
+            local started,ended = name:find(uid..'_SSC_Template_')
+            if started and ended then
+                retval[#retval+1] = name:sub(ended+1, name:len())
+            end
         end
-        if Current_Sessions[uid] and Current_Sessions[uid].id=='TEMP' then
-            TriggerEvent('SSC:Server:SaveSession', src, nil, args[1])
-            SendMessage(src, 'Success', 'Saved Template File as Session File, ID: '..args[1], 'lightgreen')
-        else
-            SendError(src, 'Current Session MUST be `TEMP` or created by template')
+        TriggerClientEvent('SSC:Client:RetrieveTemplates', src, retval)
+    end)
+
+    RegisterNetEvent('SSC:Server:RetrieveSessions', function()
+        local src = source
+        local uid = GetUniqueId(src)
+        local retval = {}
+        for name in pairs(Files) do
+            local started,ended = name:find(uid..'_SSC_Session_')
+            if started and ended then
+                retval[#retval+1] = name:sub(ended+1, name:len())
+            end
         end
+        TriggerClientEvent('SSC:Client:RetrieveSessions', src, retval)
+    end)
+
+    RegisterNetEvent('SSC:Server:RetrieveFiles', function()
+        local src = source
+        local uid = GetUniqueId(src)
+        local retval = {}
+        for k in pairs(Sessions)do
+            retval[#retval+1]=k
+        end
+        TriggerClientEvent('SSC:Client:RetrieveFiles', src, retval)
+    end)
+
+    RegisterNetEvent('SSC:Server:RetrieveAttachedFiles', function()
+        local src = source
+        local uid = GetUniqueId(src)
+        local retval = {}
+        if Current_Sessions[uid] then
+            for k in pairs(Current_Sessions[uid].scenes['0'].Files)do
+                retval[#retval+1]=k
+            end
+        end
+        TriggerClientEvent('SSC:Client:RetrieveAttachedFiles', src, retval)
     end)
 
     RegisterCommand('attachfile', function(source,args)
@@ -293,6 +319,50 @@ if GConfig.Enable then
             end
         else
             SendError(src, 'Session must be loaded in order to create static file')
+        end
+    end)
+
+    RegisterCommand('removesession', function(source, args)
+        local src = source
+        local uid = GetUniqueId(src)
+        if not args[1] then
+            SendError(src, 'You must provide session id!')
+            return
+        end
+        if Current_Sessions[uid] then
+            if Current_Sessions[uid].id==args[1]then
+                SendError(src, 'You cannot remove loaded session!')
+                return
+            end
+        end
+        if RetrieveFile('_SSC_Session_'..args[1],src) then
+            local res = RemoveFile('_SSC_Session_'..args[1],src)
+            if res==true then
+                SendMessage(src,'Success', 'Session: '..args[1]..' removed', 'orange')
+            else
+                SendError(src, 'Error: '..res)
+            end
+        else
+            SendError(src, 'Session does not exist!')
+        end
+    end)
+
+    RegisterCommand('removetemplate', function(source, args)
+        local src = source
+        local uid = GetUniqueId(src)
+        if not args[1] then
+            SendError(src, 'You must provide template id!')
+            return
+        end
+        if RetrieveFile('_SSC_Template_'..args[1],src) then
+            local res = RemoveFile('_SSC_Template_'..args[1],src)
+            if res then
+                SendMessage(src,'Success', 'Template: '..args[1]..' removed', 'orange')
+            else
+                SendError(src, 'Error: '..res)
+            end
+        else
+            SendError(src, 'Session does not exist!')
         end
     end)
 end

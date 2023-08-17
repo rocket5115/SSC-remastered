@@ -149,3 +149,69 @@ const InformationTypes = {
     'slider': 'info-slider',
     'var': 'info-var'
 };
+
+const CustomMenu = `
+    <div class="header cm-gradient"></div>
+    <div class="main">
+        <nav class="nav"></nav>
+        <div class="container"></div>
+    </div>
+    <div class="cm-resize"></div>
+`;
+
+const InnerCustomMenuNav = `
+    <a href="#">$TEXT</a><div class="nav-underline"></div><div class="nav-background"></div>
+`;
+
+const InnerCustomMenuContainer = `
+    <div class="first-block"></div>
+    <div class="second-block"></div>
+`;
+
+const InnerCustomMenu2 = `
+    <div class="menu-title cm-gradient-color">$TEXT</div>
+    <div class="cm-gradient"></div>
+    <div class="menu-inner"></div>
+`;
+
+const CustomMenuTypes = {
+    checkbox: `<div class="cm-menu-element"><div class="cm-menu-checkbox" onclick="CMenuCheckbox(this,'$ID')"></div><span>$TEXT</span></div>`,
+    list: `<div class=cm-menu-element><span>$TEXT</span><select title="$ID" class="cm-menu-list" onclick="CMenuListClicked(this)">$OPTIONS</select></div>`,
+    slider: `<div class=cm-menu-element><span>$TEXT</span><div class="cm-menu-slider"><div class="cm-menu-innerslider cm-gradient"></div></div></div>`,
+    button: `<div class="cm-menu-element"><div class="cm-menu-button" onclick="CMenuButtonClicked(this,'$ID')">$TEXT</div></div>`,
+    input: `<div class="cm-menu-element"><span>$TEXT</span><input class="cm-menu-input" type="$TYPE" value="$VALUE" name="$ID"></div>`,
+    text: '<div class="cm-menu-element" id="CMTEXT$ID">$TEXT</div>'
+};
+
+/*
+const CustomMenu = `
+    <div class="cm-header cm-gradient"></div>
+    <div class="cm-main">
+        <div class="cm-main-nav"></div>
+        <div class="cm-main-data"></div>
+    </div>
+    <div class="cm-resize"></div>
+`;
+
+const InnerCustomMenuNav = `
+    <span>$TEXT</span><div class="cm-nav-underline"></div><div class="cm-nav-menu-background"><div></div></div>
+`;
+
+const InnerCustomMenuContainer = `
+    <div class="cm-container-fcolumn"></div>
+    <div class="cm-container-scolumn"></div>
+`;
+
+const InnerCustomMenu2 = `
+    <div class="cm-menu-title cm-gradient-color">$TEXT</div>
+    <div class="cm-gradient"></div>
+    <div class="cm-menu-inner"></div>
+`;
+
+const CustomMenuTypes = {
+    checkbox: `<div class="cm-menu-element"><div class="cm-menu-checkbox" onclick="CMenuCheckbox(this,'$ID')"></div><span>$TEXT</span></div>`,
+    list: `<div class=cm-menu-element><span>$TEXT</span><select title="$ID" class="cm-menu-list" onclick="CMenuListClicked(this)">$OPTIONS</select></div>`,
+    slider: `<div class=cm-menu-element><span>$TEXT</span><div class="cm-menu-slider"><div class="cm-menu-innerslider cm-gradient"></div></div></div>`,
+    button: `<div class="cm-menu-element"><div class="cm-menu-button" onclick="CMenuButtonClicked(this,'$ID')">$TEXT</div></div>`,
+    input: `<div class="cm-menu-element"><span>$TEXT</span><input class="cm-menu-input" type="$TYPE" value="$VALUE" name="$ID"></div>`
+};*/

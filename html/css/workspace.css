@@ -49,7 +49,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    background-color: rgb(40, 37, 37);
+    background-color: rgba(40, 37, 37, 0.233);
 }
 
 .workspace-main-category>div {

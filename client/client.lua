@@ -139,6 +139,13 @@ RegisterNetEvent('SSC:Client:LoadSession', function(data)
             Wait(10)
         end
     end
+    SendNUIMessage({
+        type = 'event',
+        name = 'loaded-session',
+        data = {
+            id = data.id
+        }
+    })
     SendNotification({
         title = 'Information',
         message = 'Loaded/Created Session: '..data.id,
@@ -160,6 +167,13 @@ RegisterNetEvent('SSC:Client:UnloadSession', function(data)
         message = 'Unloaded Session: '..data.id,
         color = 'blue',
         time = 3000
+    })
+    SendNUIMessage({
+        type = 'event',
+        name = 'unloaded-session',
+        data = {
+            id = data.id
+        }
     })
     C_Entities = {}
     Entities = {}
@@ -390,14 +404,23 @@ AddEventHandler('SSC:Internal:go_to_accept', function(camera)
         return
     end
     SetEntityCoords(entity, fCoords.x, fCoords.y, fCoords.z, false, false, false, false)
+    local rot = GetEntityRotation(entity)
     if ents[cur_I].data.type~=2 then 
         SetEntityHeading(entity,heading)
     else 
-        local rot = GetEntityRotation(entity)
         SetEntityRotation(entity, rot.x, rot.y, heading)
     end
+    rot = GetEntityRotation(entity)
     C_Entities[entity].data.coords = fCoords
     C_Entities[entity].data.rotation = GetEntityRotation(entity)
+    SendNUIMessage({
+        type = 'update_entity',
+        data = {
+            entity = C_Entities[entity].data.id,
+            coords = tostring(RoundNumber(fCoords.x,4))..","..tostring(RoundNumber(fCoords.y,4))..","..tostring(RoundNumber(fCoords.z,4)),
+            rot = tostring(RoundNumber(rot.x,4))..","..tostring(RoundNumber(rot.y,4))..","..tostring(RoundNumber(rot.z,4)),
+        }
+    })
     TriggerServerEvent('SSC:Server:save_entity', C_Entities[entity].data)
 end)
 

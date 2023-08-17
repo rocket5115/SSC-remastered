@@ -34,6 +34,14 @@ function SaveFile(name, data, src)
     SaveResourceFile(resourceName, 'data/files.json', json.encode(Files), -1)
 end
 
+function RemoveFile(name, src)
+    name = GetUniqueId(src)..name
+    files[name] = nil
+    Files[name] = nil
+    SaveResourceFile(resourceName, 'data/files.json', json.encode(Files), -1)
+    return os.remove(GetResourcePath(resourceName)..'/data/'..name..'.json')
+end
+
 function RetrieveFile(name, src)
     name = GetUniqueId(src)..name
     local data = files[name]or LoadResourceFile(resourceName, 'data/'..name..'.json')

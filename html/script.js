@@ -20,7 +20,9 @@ const post = (cb,data) => {
     Config.debug&&console.log("POST: "+cb+":",JSON.stringify(data));
     try { // for testing on Browser
         return $.post('https://'+GetParentResourceName()+'/'+cb,data?JSON.stringify(data):"{}");
-    } catch(err) {};
+    } catch(err) {
+        return {then:()=>{}} // Also for browser
+    };
 };
 
 document.addEventListener('contextmenu', function(e) {
@@ -35,7 +37,7 @@ document.addEventListener('contextmenu', function(e) {
 
 document.addEventListener('keydown', function(e) {
     if(e.key==='Escape'){
-        post('nuioff');
+        post('nuioff',{});
     };
 });
 
@@ -295,6 +297,11 @@ function AddEntity(type) {
     CreateNewForm(Options[type], (e)=>{post('spawn_entity', {type: type, model: e.model, mission: e.mission, network: e.network, door: e.door})});
 };
 
+function SearchEntity() {
+    post('nuioff',{});
+    post('search_entity', {});
+};
+
 function GetRelativePositionInPercent(cx,cy,rx,ry) {
     return [(cx / rx).toFixed(2),(cy / ry).toFixed(2)];
 };
@@ -307,6 +314,7 @@ window.addEventListener('message', function (event) {
             document.querySelector('.G_Container').style.display = 'grid';
         } else {
             document.querySelector('.G_Container').style.display = 'none';
+            SetCMenuDisplay(false);
         };
     } else if(data.type==='new_entity'){
         AddSceneElement(data.scene||0,data._type,data.entity);
@@ -349,6 +357,8 @@ window.addEventListener('message', function (event) {
         SendEvent('removed-entity', {name: newTable.name});
         post('remove_entity', {name: newTable.name});
         delete(newTable);
+    } else if(data.type==='event'){
+        SendEvent(data.name, {...data.data})
     };
 });
 
