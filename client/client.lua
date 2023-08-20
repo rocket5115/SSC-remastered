@@ -72,6 +72,14 @@ AddEventHandler('SSC:NUI:Status', function(s)
 end)
 
 RegisterNetEvent('SSC:Client:LoadSession', function(data)
+    SendNUIMessage({
+        type = 'remove_scenes'
+    })
+    for k in pairs(C_Entities)do
+        if DoesEntityExist(k) then
+            DeleteNetworkedEntity(k)
+        end
+    end
     local peds,vehicles,objects = GetGamePool('CPed'),GetGamePool('CVehicle'),GetGamePool('CObject')
     local assured = false
     SendNotification({
@@ -101,6 +109,7 @@ RegisterNetEvent('SSC:Client:LoadSession', function(data)
                         end
                     end
                     entity = CreateLocalPed(coords.x, coords.y, coords.z - 1.0, v.rotation.z, v.model, v.network, v.mission, {scene=name,id=v.id})
+                    SetPedStill(entity)
                 elseif v.type == 2 then
                     for i=1,#vehicles do
                         if GetEntityModel(vehicles[i])==v.model and #(GetEntityCoords(vehicles[i])-coords)<10.0 then
@@ -129,7 +138,7 @@ RegisterNetEvent('SSC:Client:LoadSession', function(data)
                 type = 'update_entity',
                 data = {
                     entity = C_Entities[entity].data.id,
-                    coords = tostring(RoundNumber(coords.x,4))..","..tostring(RoundNumber(coords.y,4))..","..tostring(RoundNumber(coords.z,4)),
+                    coords = tostring(RoundNumber(coords.x,4))..","..tostring(RoundNumber(coords.y,4))..","..tostring(RoundNumber(v.type~=1 and coords.z or coords.z-1.0,4)),
                     rot = tostring(RoundNumber(v.rotation.x,4))..","..tostring(RoundNumber(v.rotation.y,4))..","..tostring(RoundNumber(v.rotation.z,4)),
                     mission = v.mission,
                     network = v.network
@@ -245,7 +254,7 @@ AddEventHandler('SSC:Internal:go_to_entity', function(entity,cam,entities)
     SendNUIMessage({
         type = 'information',
         data = {
-            title = 'Scene: '..ents[cur_I].data.scene,
+            title = 'Scene: '..C_Entities[ents[cur_I].entity].data.scene,
             options = {
                 {
                     text = 'Name:',
@@ -271,6 +280,14 @@ AddEventHandler('SSC:Internal:go_to_entity', function(entity,cam,entities)
                     stop = max_I
                 }
             }
+        }
+    })
+    SendNUIMessage({
+        type = 'info_update_slider',
+        name = cur_slider,
+        value = cur_I,
+        ids = {
+            name = C_Entities[ents[cur_I].entity].data.id
         }
     })
 end)

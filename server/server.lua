@@ -119,7 +119,7 @@ if GConfig.Enable then
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             for k,v in ipairs(Current_Sessions[uid].scenes[data.from].Entities)do
-                if v.id==data.entity then
+                if v.id==data.name then
                     v.scene=data.to
                     table.insert(Current_Sessions[uid].scenes[data.to].Entities, v)
                     table.remove(Current_Sessions[uid].scenes[data.from].Entities, k)
@@ -264,6 +264,7 @@ if GConfig.Enable then
                     SendMessage(src, 'Warning', 'Attachment File Attached and Loaded directly from code', 'orange')
                     TriggerEvent('SSC:Server:SaveSession', src)
                     load(type(data)=="string"and data or "")()
+                    print(Sessions[args[1]],data)
                 end
             elseif not Current_Sessions[uid].scenes['0'].Files[args[1]] then
                 Current_Sessions[uid].scenes['0'].Files[args[1]] = true
@@ -365,6 +366,10 @@ if GConfig.Enable then
             SendError(src, 'Session does not exist!')
         end
     end)
+
+    RegisterCommand('refreshconfig', function(source, args)
+        EnsureConfigFile()
+    end)
 end
 
 local buckets = {}
@@ -391,8 +396,8 @@ end)
 RegisterCommand('loadscenebucket', function(source,args)
     if not IsAllowed(source, true) then SendError(source, 'You are not allowed to do that') return end
     if not args[1] then SendError(source, 'Invalid Static Scene Id') return end
-    if buckets[args[1]] then
-        UnloadSceneBucket(buckets[args[1]].ents)
+    if buckets[args[1]..(args[2] or 0)] then
+        UnloadSceneBucket(buckets[args[1]..(args[2] or 0)].ents)
         local file = RetrieveFile('_SSC_Static_'..args[1])
         if not file then SendError(source, 'Static Scene not found') return end
         local ents = LoadSceneBucket(file.entities)
@@ -402,7 +407,7 @@ RegisterCommand('loadscenebucket', function(source,args)
                 StartSession(k, ents)
             end
         end
-        buckets[args[1]].bucket = tonumber(args[2]or 0)
+        buckets[args[1]..(args[2] or 0)].bucket = tonumber(args[2]or 0)
     else
         local file = RetrieveFile('_SSC_Static_'..args[1])
         if not file then SendError(source, 'Static Scene not found') return end
@@ -413,7 +418,7 @@ RegisterCommand('loadscenebucket', function(source,args)
                 StartSession(k, ents)
             end
         end
-        buckets[args[1]] = {
+        buckets[args[1]..(args[2] or 0)] = {
             ents = ents,
             bucket = tonumber(args[2]or 0) or 0
         }
@@ -423,10 +428,10 @@ end)
 RegisterCommand('unloadscenebucket', function(source,args)
     if not IsAllowed(source, true) then SendError(source, 'You are not allowed to do that') return end
     if not args[1] then SendError(source, 'Invalid Static Scene Id') return end
-    if buckets[args[1]] then
-        UnloadSceneBucket(buckets[args[1]].ents)
-        buckets[args[1]]=nil
+    if buckets[args[1]..(args[2] or 0)] then
+        UnloadSceneBucket(buckets[args[1]..(args[2] or 0)].ents)
+        buckets[args[1]..(args[2] or 0)]=nil
     else
-        SendError(source, 'Invalid Static Scene Id or already unloaded')
+        SendError(source, 'Invalid Static Scene Id or invalid Bucket or already unloaded')
     end
 end)

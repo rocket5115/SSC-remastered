@@ -2,11 +2,57 @@ Files = {}
 local files = {}
 local resourceName = GetCurrentResourceName()
 local uids = {}
+local directoryPath = GetResourcePath(GetCurrentResourceName())
+
+function GetFilesInDirectory(dir, method)
+    local files = {}
+    local fData = {}
+    local directory = directoryPath..'/'..dir
+    local cmd
+    if not method then
+        cmd = 'dir /B "' .. directory .. '"'
+    else
+        cmd = 'ls -p "' .. directory .. '" | grep -v /'
+    end
+
+    local handle = io.popen(cmd)
+    if handle then
+        local result = handle:read("*a")
+        handle:close()
+
+        for file in result:gmatch("[^\r\n]+") do
+            local data = io.open(directoryPath..'/'..dir..'/'..file)
+            local result = data:read("*a")
+            data:close()
+            table.insert(files, file)
+            table.insert(fData, result)
+        end
+    end
+    if not method and #files==0 then
+        return GetFilesInDirectory(dir, true)
+    else
+        return files,fData
+    end
+end
 
 function EnsureConfigFile()
     local config = LoadResourceFile(resourceName, 'data/files.json')
     if config then
         Files = json.decode(config)
+        local filesInDirectory,filesData = GetFilesInDirectory('data')
+        if #filesInDirectory == 0 then
+            return
+        end
+        
+        Files = {}
+        for i = 1, #filesInDirectory do
+            if filesInDirectory[i] ~= 'files.json' then
+                local name = filesInDirectory[i]:sub(1,filesInDirectory[i]:len()-5)
+                Files[name] = true
+                files[name] = filesData[i]
+            end
+        end
+        SaveResourceFile(resourceName, 'data/files.json', json.encode(Files), -1)
     else
         SaveResourceFile(resourceName, 'data/files.json', '[]', -1)
     end
@@ -108,7 +154,7 @@ end
 
 local function CreateBucketVehicle(x,y,z,h,model)
     model = (type(model)=='number'and model or GetHashKey(model))
-    local ent = Citizen.InvokeNative(`CREATE_AUTOMOBILE`, `blista`, x,y,z,h)
+    local ent = Citizen.InvokeNative(`CREATE_AUTOMOBILE`, model, x,y,z,h)
     return ent
 end
 

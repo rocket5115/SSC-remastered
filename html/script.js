@@ -110,7 +110,7 @@ function MoveChildrenToScene(from, to) { // send children nodes from one DOM&Obj
         from.drag.RemoveFromList(from.children[i].DOM);
         to.drag.AddToList(from.children[i].DOM);
         SendEvent('entity-moved', {from: from.id, to: to.id, entity: from.children[i].data.name})
-        post('entity_move_scene', {from: from.id, to: to.id, entity: from.children[i].data.name});
+        post('entity_move_scene', {from: from.id, to: to.id, name: from.children[i].data.name});
         delete(from.children[i]);
     };
 };

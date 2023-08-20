@@ -89,7 +89,7 @@ RegisterNUICallback('remove_entity', function(data)
 end)
 
 RegisterNUICallback('entity_move_scene', function(data)
-    local entity = GetEntityFromName(data.entity)
+    local entity = GetEntityFromName(data.name)
     C_Entities[entity].data.scene = data.to
     TriggerEvent('SSC:Internal:entity_move_scene', data)
 end)
@@ -104,21 +104,27 @@ end)
 RegisterNUICallback('update_entity_coords', function(data)
     local entity = GetEntityFromName(data.name)
     SetEntityCoords(entity, data.coords.x, data.coords.y, data.coords.z, false, false, false, false)
+    C_Entities[entity].data.coords = GetEntityCoords(entity)
+    TriggerServerEvent('SSC:Server:save_entity', C_Entities[entity].data)
 end)
 
 RegisterNUICallback('update_entity_rotation', function(data)
     local entity = GetEntityFromName(data.name)
     SetEntityRotation(entity, data.rot.x, data.rot.y, data.rot.z)
+    C_Entities[entity].data.rotation = GetEntityRotation(entity)
+    TriggerServerEvent('SSC:Server:save_entity', C_Entities[entity].data)
 end)
 
 RegisterNUICallback('update_entity_mission', function(data)
     local entity = GetEntityFromName(data.name)
     C_Entities[entity].data.mission = data.value
+    TriggerServerEvent('SSC:Server:save_entity', C_Entities[entity].data)
 end)
 
 RegisterNUICallback('update_entity_network', function(data)
     local entity = GetEntityFromName(data.name)
     C_Entities[entity].data.network = data.value
+    TriggerServerEvent('SSC:Server:save_entity', C_Entities[entity].data)
 end)
 
 RegisterNUICallback('go_to_entity', function(data)
@@ -199,10 +205,11 @@ RegisterNUICallback('spawn_entity', function(data)
     if type == 1 then
         entity = CreateLocalPed(fCoords.x, fCoords.y, fCoords.z, heading, model, network, mission)
         C_Entities[entity].data.coords = C_Entities[entity].data.coords-vector3(0.0,0.0,1.0)
+        SetPedStill(entity)
     elseif type == 2 then
         entity = CreateLocalVehicle(fCoords.x, fCoords.y, fCoords.z, heading, model, network, mission)
     elseif type == 3 then
-        entity = CreateLocalObject(fCoords.x, fCoords.y, fCoords.z, model, network, door)
+        entity = CreateLocalObject(fCoords.x, fCoords.y, fCoords.z, model, network, mission, door)
         SetEntityRotation(entity, 0.0, 0.0, heading)
     end
     TriggerEvent('SSC:Internal:new_entity', entity)
@@ -246,7 +253,6 @@ RegisterNUICallback('search_entity', function()
     local proceed = true
     local fCoords = vector3(0.0,0.0,0.0)
     local entity = 0
-    local entType = 1
     SendNUIMessage({
         type = 'information',
         data = {
@@ -282,7 +288,7 @@ RegisterNUICallback('search_entity', function()
                         SetEntityDrawOutline(entity, false)
                         ResetEntityAlpha(entity)
                     end
-                    entType = GetEntityType(entity)
+                    local entType = GetEntityType(entity)
                     entity = fEntity
                     if entType == 1 then
                         SetEntityAlpha(entity, 200, true)
@@ -296,14 +302,15 @@ RegisterNUICallback('search_entity', function()
     })
     while keep do
         Wait(10)
-        local t = GetEntityType(entity)
-        if entity == 0 or t==0 then
+        local ent = entity
+        local t = GetEntityType(ent)
+        if ent == 0 or t==0 then
             DrawSphere(fCoords.x, fCoords.y, fCoords.z, 0.05, 255, 0, 0, 1.0)
         else
             if t == 1 then
-                SetEntityAlpha(entity, 200, true)
+                SetEntityAlpha(ent, 200, true)
             elseif t > 1 then
-                SetEntityDrawOutline(entity, true)
+                SetEntityDrawOutline(ent, true)
                 SetEntityDrawOutlineColor(255,0,0,100)
             end
         end
@@ -318,11 +325,18 @@ RegisterNUICallback('search_entity', function()
     ResetEntityAlpha(entity)
     RegisterEntity(entity, C_Scene)
     TriggerEvent('SSC:Internal:new_entity', entity)
+    local entType = GetEntityType(entity)
     SendNUIMessage({
         type = 'new_entity',
         _type = entType,
         entity = C_Entities[entity].data.id
     })
+    if entType==1 then
+        FreezeEntityPosition(entity, true)
+        SetPedStill(entity)
+        fCoords = GetEntityCoords(entity)-vector3(0.0,0.0,1.0)
+        SetEntityCoords(entity, table.unpack(fCoords))
+    end
     local rot = GetEntityRotation(entity)
     SendNUIMessage({
         type = 'update_entity',
@@ -393,6 +407,10 @@ RegisterNUICallback('load_template', function(data)
     ExecuteCommand('loadtemplate '..data.id)
 end)
 
+RegisterNUICallback('remove_template', function(data)
+    ExecuteCommand('removetemplate '..data.id)
+end)
+
 RegisterNUICallback('create_template', function(data)
     ExecuteCommand('createtemplate '..data.name)
 end)
@@ -439,4 +457,8 @@ end)
 
 RegisterNUICallback('create_static_map', function(data)
     ExecuteCommand('createstaticmap '..data.name)
+end)
+
+RegisterNUICallback('refresh_files_misc', function()
+    ExecuteCommand('refreshconfig')
 end)

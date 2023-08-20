@@ -72,7 +72,7 @@ const Options = {
     [1]: [
         {name: 'model', default: 'a_m_m_mexlabor_01', type: 'text'},
         {name: 'network', default: false, type: 'checkbox'},
-        {name: 'bScript', default: false, type: 'checkbox'}
+        {name: 'mission', default: false, type: 'checkbox'}
     ],
     [2]: [
         {name: 'model', default: 'blista', type: 'text'},

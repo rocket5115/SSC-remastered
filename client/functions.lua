@@ -39,6 +39,8 @@ function CreateLocalPed(x,y,z,h,model,network,mission,options)
     model = PrepareModel(model,`a_m_m_mexlabor_01`)
     RequestModelSync(model)
     local entity = CreatePed(1,model,x,y,z,h,network,mission)
+    options = options or{}
+    options.mission = mission
     RegisterEntity(entity, C_Scene, options)
     return entity
 end
@@ -48,6 +50,8 @@ function CreateLocalVehicle(x,y,z,h,model,network,mission,options)
     model = PrepareModel(model,`blista`)
     RequestModelSync(model)
     local entity = CreateVehicle(model,x,y,z,h,network,mission)
+    options = options or{}
+    options.mission = mission
     RegisterEntity(entity, C_Scene, options)
     return entity
 end
@@ -57,6 +61,8 @@ function CreateLocalObject(x,y,z,model,network,mission,door,options)
     model = PrepareModel(model,`prop_weed_block_01`)
     RequestModelSync(model)
     local entity = CreateObject(model,x,y,z,network,mission,door)
+    options = options or{}
+    options.mission = mission
     RegisterEntity(entity, C_Scene, options)
     return entity
 end
@@ -64,6 +70,17 @@ end
 Citizen.CreatePed = CreateLocalPed
 Citizen.CreateVehicle = CreateLocalVehicle
 Citizen.CreateObject = CreateLocalObject
+
+function SetPedStill(ped)
+    SetPedFleeAttributes(ped, 2)
+    SetBlockingOfNonTemporaryEvents(ped, true)
+    SetPedCanRagdollFromPlayerImpact(ped, false)
+    SetPedDiesWhenInjured(ped, false)
+    FreezeEntityPosition(ped, true)
+    SetEntityInvincible(ped, true)
+    SetPedCanPlayAmbientAnims(ped, false)
+    TaskStandStill(ped,-1)
+end
 
 function RequestNetworkControl(ent)
     if DoesEntityExist(ent) then
@@ -106,6 +123,10 @@ end
 function RegisterEntity(entity,scene,options)
     options = options or {}
     scene = options.scene or scene
+    mission = options.mission
+    if mission==nil then 
+        mission = IsEntityAMissionEntity(entity)
+    end
     local newEntity = {
         entity=entity, -- def 0 for exports
         data = {
@@ -114,7 +135,7 @@ function RegisterEntity(entity,scene,options)
             coords = GetEntityCoords(entity),
             rotation = GetEntityRotation(entity)or vector3(0,0,0),
             network = NetworkGetEntityIsNetworked(entity),
-            mission = IsEntityAMissionEntity(entity),
+            mission = mission,
             door = false,
             id = options.id or tostring(math.random(99999)),
             scene = tostring(scene)or'0'

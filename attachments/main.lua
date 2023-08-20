@@ -11,6 +11,6 @@ Sessions['main'].listener['object'] = function(entity) -- same as previous, but 
     FreezeEntityPosition(entity, true)
 end
 
--- Sessions['main'].listener['FirstEntity'] = function(entity) -- `FirstEntity` comes from entity name, it must have the same name in session as here
---     FreezeEntityPosition(entity, true)
--- end
+Sessions['main'].listener['zentorno'] = function(entity)
+    FreezeEntityPosition(entity, false)
+end

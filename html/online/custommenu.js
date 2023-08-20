@@ -256,6 +256,7 @@ function CMenuSetSelectOptions(select, e, cb) {
 let loaded = undefined;
 const Templates = [];
 const Sessions = [];
+const Statics = [];
 const Files = [];
 const AttachedFiles = [];
 
@@ -273,7 +274,7 @@ document.addEventListener('unloaded-session', (e)=>{
 $(document).ready(()=>{
     CreateMenu({
         defaults: {opacity: 100},
-        nav: ['editor','settings','menu'],
+        nav: ['editor','settings','misc'],
         menu: [
             {
                 nav: 'editor',
@@ -323,7 +324,7 @@ $(document).ready(()=>{
                         title: 'Remove Session',
                         id: 'remove_session',
                         display: ()=>{
-                            return loaded===undefined;
+                            return loaded===undefined&&Sessions.length>0;
                         }
                     },
                     {
@@ -390,6 +391,14 @@ $(document).ready(()=>{
                         type: 'button',
                         title: 'Refresh Templates',
                         id: 'refresh_templates',
+                    },
+                    {
+                        type: 'button',
+                        title: 'Remove Template',
+                        id: 'remove_template',
+                        display: ()=>{
+                            return Templates.length>0;
+                        }
                     },
                     {
                         type: 'input',
@@ -500,11 +509,15 @@ $(document).ready(()=>{
                         type: 'button',
                         title: 'Create Static Map',
                         id: 'create_static_map'
+                    },
+                    {
+                        type: 'text',
+                        title: 'Rest in `misc` nav'
                     }
                 ]
             },
             {
-                nav: 'menu',
+                nav: 'settings',
                 title: 'Menu',
                 options: [,
                     {
@@ -528,6 +541,37 @@ $(document).ready(()=>{
                         type: 'button',
                         title: 'Reset Position',
                         id: 'reset-position'
+                    }
+                ]
+            },
+            {
+                nav: 'misc',
+                title: 'Server',
+                options: [
+                    {
+                        type: 'button',
+                        title: 'Refresh Files(config)',
+                        id: 'refresh-files-misc'
+                    }
+                ]
+            },
+            {
+                nav: 'misc',
+                title: 'Statics',
+                options: [
+                    {
+                        type: 'list',
+                        title: 'Static Scenes',
+                        display: ()=>{
+                            return Statics.length>0;
+                        },
+                        id: 'statics',
+                        options: [
+                            {
+                                title: 'None',
+                                id: 'none'
+                            }
+                        ]
                     }
                 ]
             }
@@ -567,6 +611,7 @@ $(document).ready(()=>{
                 const name = document.getElementById('CMIsessionName').value;
                 if(name==='')return;
                 post('create_session', {name: name});
+                menuCbs['refresh_session']();
             },
             //template menu
             'refresh_templates': ()=>{
@@ -582,10 +627,18 @@ $(document).ready(()=>{
                 if(value==='none')return;
                 post('load_template', {id: value});
             },
+            'remove_template': ()=>{
+                const select = document.querySelector('select[title="template"]');
+                const value = select.options[select.selectedIndex].value;
+                if(value==='none')return;
+                post('remove_template', {id: value});
+                menuCbs['refresh_templates']();
+            },
             'create_template': ()=>{
                 const name = document.getElementById('CMItemplateName').value;
                 if(name==='')return;
                 post('create_template', {name: name});
+                menuCbs['refresh_templates']();
             },
             //metadata menu
             'refresh_files': ()=>{
@@ -605,7 +658,7 @@ $(document).ready(()=>{
                         };
                         CMenuSetSelectOptions(select, e, (elem)=>{Files.push(elem);});
                     });
-                },0);
+                },100);
             },
             'refresh_a_files': ()=>{
                 post('refresh_a_files', {}).then((e)=>{
@@ -624,7 +677,7 @@ $(document).ready(()=>{
                         };
                         CMenuSetSelectOptions(select, e, (elem)=>{Files.push(elem);});
                     });
-                },0);
+                },100);
             },
             'attach_file': ()=>{
                 const select = document.querySelector('select[title="files"]');
@@ -678,6 +731,15 @@ $(document).ready(()=>{
                 document.getElementById('CMIMenufontSize').value = '0';
                 document.documentElement.style.setProperty('--cm-font-multiplier', '0px');
             },
+            //Misc Nav
+            'refresh-files-misc': ()=>{
+                post('refresh_files_misc',{});
+                setTimeout(()=>{
+                    menuCbs['refresh_files']();
+                    menuCbs['refresh_session']();
+                    menuCbs['refresh_templates']();
+                },100);
+            }
         }
     });
     setTimeout(()=>{

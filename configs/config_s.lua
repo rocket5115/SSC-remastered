@@ -8,5 +8,5 @@ Config.StaticScenes = {
 }
 
 Config.Admins = {
-    --'license:'
+    'license:'
 }
