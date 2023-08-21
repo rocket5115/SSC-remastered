@@ -530,10 +530,6 @@ RegisterCommand('unloadallscenebuckets', function(source,args)
     end
 end)
 
-RegisterCommand('setbucket', function(source, args)
-    SetPlayerRoutingBucket(source, tonumber(args[1]or 0))
-end)
-
 RegisterNetEvent('SSC:Server:CheckIfAdmin', function()
     local src = source
     TriggerClientEvent('SSC:Client:IsAdmin', src, IsAllowed(src), IsAllowed(src, false, true))
