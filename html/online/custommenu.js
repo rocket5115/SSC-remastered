@@ -6,8 +6,10 @@ let menuCbs = {};
 let lastSelectedList = null;
 let lastMinDimensions = null;
 let lastElementsDisplay = null;
+let CMenuCurrentlyLoaded = false;
 
 function CreateMenu(options) {
+    CMenuCurrentlyLoaded=true;
     menu = document.createElement('div');
     menu.classList.add('custom-menu');
     menu.innerHTML = CustomMenu;
@@ -29,6 +31,7 @@ function CreateMenu(options) {
 
 function SetCMenuDisplay(bool=false) {
     if(!menu)return;
+    CMenuCurrentlyLoaded = bool;
     if(bool){
         menu.style.display = 'grid';
     } else {
@@ -38,12 +41,18 @@ function SetCMenuDisplay(bool=false) {
 
 function RemoveMenu() {
     if(menu)menu.remove();
+    CMenuCurrentlyLoaded=false;
+};
+
+function IsCMenuOpen() {
+    return CMenuCurrentlyLoaded;
 };
 
 function MenuSetOptions(options={}) {
     const nav = options.nav;
     const menus = options.menu;
     const defs = options.defaults;
+    const defaultStarted = options.default||nav[0];
     const navs = {};
     nav.forEach(name=>{
         const div = document.createElement('div');
@@ -59,6 +68,9 @@ function MenuSetOptions(options={}) {
         container.id = 'cm-'+name;
         b.append(container);
         navs[name]=container;
+        if(defaultStarted===name){
+            div.onclick({target:div});
+        };
     });
     const close = document.createElement('div');
     close.classList.add('nav-menu');
@@ -140,7 +152,7 @@ function PrepareCMenu(DOM, options=[], defs={}) {
                 div.querySelector('.cm-menu-checkbox').classList.add('cm-checked');
             };
         } else if(e.type==='input'){
-            div.innerHTML = div.innerHTML.replace('$TYPE', e._type||'text').replace('$VALUE', e.default||'');
+            div.innerHTML = div.innerHTML.replace('$TYPE', e._type||'text').replace('$VALUE', String(e.default!==undefined?e.default:''));
             div.addEventListener('input', (r)=>{
                 CMenuInputEntered(r.target.name,r.target.value);
             });
@@ -256,9 +268,20 @@ function CMenuSetSelectOptions(select, e, cb) {
 let loaded = undefined;
 const Templates = [];
 const Sessions = [];
-const Statics = [];
+const AllStatics = [];
+let AllMineStatics = {};
+let Statics = {};
+let StaticsBuckets = {};
 const Files = [];
 const AttachedFiles = [];
+let Admin = false;
+let Bucket = false;
+
+document.addEventListener('admin', (e)=>{
+    Admin = e.detail.normal;
+    Bucket = e.detail.bucket;
+    CMenuTriggerDisplayFuncs();
+});
 
 document.addEventListener('loaded-session', (e)=>{
     loaded = e.detail.id;
@@ -271,14 +294,21 @@ document.addEventListener('unloaded-session', (e)=>{
     CMenuTriggerDisplayFuncs();
 });
 
-$(document).ready(()=>{
+let CMenuLoaded = false;
+
+const CMenuCreateAll = ()=>{
     CreateMenu({
+        default: 'editor',
         defaults: {opacity: 100},
         nav: ['editor','settings','misc'],
         menu: [
             {
                 nav: 'editor',
                 title: 'session',
+                id: 'Admin1',
+                display: ()=>{
+                    return Admin;
+                },
                 options: [
                     {
                         type: 'text',
@@ -308,7 +338,7 @@ $(document).ready(()=>{
                         title: 'Load Session',
                         id: 'load_session',
                         display: ()=>{
-                            return loaded===undefined;
+                            return loaded===undefined&&Sessions.length>0;
                         }
                     },
                     {
@@ -365,7 +395,7 @@ $(document).ready(()=>{
                 nav: 'editor',
                 title: 'template',
                 display: ()=>{
-                    return loaded!==undefined;
+                    return loaded!==undefined&&Admin;
                 },
                 options: [
                     {
@@ -416,7 +446,7 @@ $(document).ready(()=>{
                 nav: 'editor',
                 title: 'metadata',
                 display: ()=>{
-                    return loaded!==undefined;
+                    return loaded!==undefined&&Admin;
                 },
                 options: [
                     {
@@ -470,6 +500,43 @@ $(document).ready(()=>{
                 ]
             },
             {
+                nav: 'editor',
+                title: 'misc',
+                display: ()=>{
+                    return loaded!==undefined&&Admin;
+                },
+                options: [
+                    {
+                        type: 'input',
+                        title: 'Static Id',
+                        id: 'staticId'
+                    },
+                    {
+                        type: 'button',
+                        title: 'Create Static Map',
+                        id: 'create_static_map'
+                    },
+                    {
+                        type: 'text',
+                        title: 'Rest in `misc` nav'
+                    }
+                ]
+            },
+            {
+                nav: 'editor',
+                title: 'Admin',
+                id: 'Admin2',
+                display: ()=>{
+                    return !Admin
+                },
+                options: [
+                    {
+                        type: 'text',
+                        title: 'You must have Admin Permissions to view these settings'
+                    }
+                ]
+            },
+            {
                 nav: 'settings',
                 title: 'All',
                 options: [
@@ -490,29 +557,6 @@ $(document).ready(()=>{
                         title: 'Opacity',
                         id: 'opacity',
                         default: 100
-                    }
-                ]
-            },
-            {
-                nav: 'editor',
-                title: 'misc',
-                display: ()=>{
-                    return loaded!==undefined;
-                },
-                options: [
-                    {
-                        type: 'input',
-                        title: 'Static Id',
-                        id: 'staticId'
-                    },
-                    {
-                        type: 'button',
-                        title: 'Create Static Map',
-                        id: 'create_static_map'
-                    },
-                    {
-                        type: 'text',
-                        title: 'Rest in `misc` nav'
                     }
                 ]
             },
@@ -547,6 +591,9 @@ $(document).ready(()=>{
             {
                 nav: 'misc',
                 title: 'Server',
+                display: ()=>{
+                    return Admin||Bucket;
+                },
                 options: [
                     {
                         type: 'button',
@@ -557,13 +604,16 @@ $(document).ready(()=>{
             },
             {
                 nav: 'misc',
-                title: 'Statics',
+                title: 'Loaded Statics(Admin)',
+                display: ()=>{
+                    return Bucket;
+                },
                 options: [
                     {
                         type: 'list',
-                        title: 'Static Scenes',
+                        title: 'Loaded Static Maps',
                         display: ()=>{
-                            return Statics.length>0;
+                            return Object.keys(Statics).length>0;
                         },
                         id: 'statics',
                         options: [
@@ -572,12 +622,189 @@ $(document).ready(()=>{
                                 id: 'none'
                             }
                         ]
+                    },
+                    {
+                        type: 'button',
+                        title: 'Refresh Loaded Statics',
+                        id: 'refresh-statics'
+                    },
+                    {
+                        type: 'list',
+                        title: 'Bucket',
+                        display: ()=>{
+                            const select = document.querySelector('select[title="statics"]');
+                            return StaticsBuckets[select?.options[select?.selectedIndex]?.textContent]?.length>0;
+                        },
+                        id: 'static-buckets',
+                        options: [
+                            {
+                                title: 'None',
+                                id: 'none'
+                            }
+                        ]
+                    },
+                    {
+                        type: 'button',
+                        title: 'Unload From Selected Bucket',
+                        id: 'unload-static',
+                        display: ()=>{
+                            return Object.keys(Statics).length>0;
+                        }
+                    },
+                    {
+                        type: 'button',
+                        title: 'Unload From All Buckets',
+                        id: 'unload-all-statics',
+                        display: ()=>{
+                            return Object.keys(Statics).length>0;
+                        }
                     }
                 ]
-            }
+            },
+            {
+                nav: 'misc',
+                title: 'Statics(Admin)',
+                display: ()=>{
+                    return Bucket;
+                },
+                options: [
+                    {
+                        type: 'list',
+                        title: 'Static Maps',
+                        display: ()=>{
+                            return AllStatics.length>0;
+                        },
+                        id: 'all-statics',
+                        options: [
+                            {
+                                title: 'None',
+                                id: 'none'
+                            }
+                        ]
+                    },
+                    {
+                        type: 'button',
+                        title: 'Refresh Statics',
+                        id: 'refresh-all-statics'
+                    },
+                    {
+                        type: 'button',
+                        title: 'Remove Static File',
+                        id: 'remove-static-file',
+                        display: ()=>{
+                            const select = document.querySelector('select[title="all-statics"]');
+                            return AllMineStatics[select?.options[select?.selectedIndex]?.textContent]===true;
+                        }
+                    },
+                    {
+                        type: 'input',
+                        _type: 'number',
+                        title: 'Bucket',
+                        default: 0,
+                        id: 'all-statics-bucket',
+                        display: ()=>{
+                            return AllStatics.length>0;
+                        }
+                    },
+                    {
+                        type: 'button',
+                        title: 'Load Static to Bucket',
+                        id: 'all-statics-load',
+                        display: ()=>{
+                            return AllStatics.length>0
+                        }
+                    }
+                ]
+            },
+            {
+                nav: 'misc',
+                title: 'placeholder',
+                display: ()=>{
+                    return false;
+                },
+                options: []
+            },
+            {
+                nav: 'misc',
+                title: 'Admin',
+                display: ()=>{
+                    return !Admin&&!Bucket;
+                },
+                options: [
+                    {
+                        type: 'text',
+                        title: 'You must have BucketAdmins Permissions in order to view these options',
+                    }
+                ]
+            },
         ],
         cbs: {
             //Editor Nav
+            //Statics Nav
+            //Statics(Admin)
+            'refresh-all-statics': ()=>{
+                post('refresh_all_statics',{}).then((e)=>{
+                    const select = document.querySelector('select[title="all-statics"]');
+                    AllStatics.length=0;
+                    AllMineStatics={};
+                    e.forEach(elem=>{
+                        AllStatics.push(elem.name);
+                        AllMineStatics[elem.name]=elem.mine;
+                    });
+                    CMenuSetSelectOptions(select, AllStatics);
+                });
+            },
+            'remove-static-file': ()=>{
+                const select = document.querySelector('select[title="all-statics"]');
+                post('remove_static', {name: select.options[select.selectedIndex].textContent});
+                setTimeout(()=>{
+                    menuCbs['refresh-all-statics']();
+                },100);
+            },
+            'all-statics-load': ()=>{
+                const select = document.querySelector('select[title="all-statics"]');
+                post('load_static', {name: select.options[select.selectedIndex].textContent, id: document.querySelector('input[name="all-statics-bucket"]').value});
+                setTimeout(()=>{
+                    menuCbs['refresh-statics']();
+                    menuCbs['refresh-all-statics']();
+                },100);
+            },
+            //Loaded Statics(Admin)
+            'refresh-statics': ()=>{
+                post('refresh_statics',{}).then((e)=>{
+                    const select = document.querySelector('select[title="statics"]');
+                    const select2 = document.querySelector('select[title="static-buckets"]');
+                    Statics = {};
+                    StaticsBuckets = {};
+                    let data = [];
+                    e.forEach(v=>{
+                        if(!Statics[v.name]){
+                            Statics[v.name]=true;
+                            StaticsBuckets[v.name]=[v.bucket];
+                            data.push(v.name);
+                        } else {
+                            StaticsBuckets[v.name].push(v.bucket);
+                        };
+                    });
+                    CMenuSetSelectOptions(select, data);
+                    CMenuSetSelectOptions(select2, StaticsBuckets[select.options[select.selectedIndex].textContent]||[]);
+                });
+            },
+            'unload-static': ()=>{
+                const select = document.querySelector('select[title="statics"]');
+                const select2 = document.querySelector('select[title="static-buckets"]');
+                post('unload_static_map', {id: select.options[select.selectedIndex].textContent, bucket: select2.options[select2.selectedIndex].textContent});
+                setTimeout(()=>{
+                    menuCbs['refresh-statics']();
+                },100);
+            },
+            'unload-all-statics': ()=>{
+                const select = document.querySelector('select[title="statics"]');
+                post('unload_all_static_maps', {id: select.options[select.selectedIndex].textContent});
+                setTimeout(()=>{
+                    menuCbs['refresh-statics']();
+                },100);
+            },
             //session menu
             'save_session': ()=>{
                 post('save_session',{});
@@ -698,6 +925,10 @@ $(document).ready(()=>{
                 const name = document.getElementById('CMIstaticId').value;
                 if(name==='')return;
                 post('create_static_map', {name: name});
+                setTimeout(()=>{
+                    menuCbs['refresh-statics']();
+                    menuCbs['refresh-all-statics']();
+                },100);
             },
             //Settings Nav
             'opacity': (value)=>{
@@ -747,6 +978,15 @@ $(document).ready(()=>{
         menuCbs['refresh_templates']();
         menuCbs['refresh_files']();
         menuCbs['refresh_a_files']();
+        menuCbs['refresh-statics']();
+        menuCbs['refresh-all-statics']();
     },100);
     SetCMenuDisplay(false);
+};
+
+document.addEventListener('script-loaded', ()=>{
+    if(!CMenuLoaded){
+        CMenuLoaded = true;
+        CMenuCreateAll();
+    };
 });

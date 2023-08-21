@@ -11,6 +11,7 @@ const InnerForm = `
 const InnerChildForm = `
     <div class="fa-solid fa-x" onclick="RemoveSceneDropdownForm()"></div>
     <div class="scene-form-container">
+        <div onclick="SelectedFormOption('copy_class')">Copy Class Data</div>
         <div onclick="SelectedFormOption('select')">Select</div>
         <div onclick="SelectedFormOption('focus')">Focus In Workspace</div>
         <div onclick="SelectedFormOption('go_to')">Go To</div>
@@ -121,6 +122,7 @@ const InnerCategoryElementHTML = `
     <div><span>rot: </span><input name="rot" type="text" value="0.0,0.0,0.0"></div>
     <div><span>mission: </span><input name="mission" type="checkbox"></div>
     <div><span>network: </span><input name="network" type="checkbox"></div>
+    <div><span>classes: </span><input name="classes" type="text"></div>
 `;
 
 const InnerNotification = `
@@ -135,6 +137,7 @@ const InnerSelectForm = `
         <div onclick="SelectedFormOption('stop2')">(All)Stop Selecting</div>
         <div onclick="SelectedFormOption('change2')">(All)Change Scene</div>
         <div onclick="SelectedFormOption('send2')">(All)Create and Change Scene</div>
+        <div onclick="SelectedFormOption('paste2')">(All)Paste Class Data</div>
         <div onclick="SelectedFormOption('delete2')">(All)Delete</div>
     </div>
 `;
@@ -179,39 +182,6 @@ const CustomMenuTypes = {
     list: `<div class=cm-menu-element><span>$TEXT</span><select title="$ID" class="cm-menu-list" onclick="CMenuListClicked(this)">$OPTIONS</select></div>`,
     slider: `<div class=cm-menu-element><span>$TEXT</span><div class="cm-menu-slider"><div class="cm-menu-innerslider cm-gradient"></div></div></div>`,
     button: `<div class="cm-menu-element"><div class="cm-menu-button" onclick="CMenuButtonClicked(this,'$ID')">$TEXT</div></div>`,
-    input: `<div class="cm-menu-element"><span>$TEXT</span><input class="cm-menu-input" type="$TYPE" value="$VALUE" name="$ID"></div>`,
+    input: `<div class="cm-menu-element"><span>$TEXT</span><input name="$ID" class="cm-menu-input" type="$TYPE" value="$VALUE" name="$ID"></div>`,
     text: '<div class="cm-menu-element" id="CMTEXT$ID">$TEXT</div>'
 };
-
-/*
-const CustomMenu = `
-    <div class="cm-header cm-gradient"></div>
-    <div class="cm-main">
-        <div class="cm-main-nav"></div>
-        <div class="cm-main-data"></div>
-    </div>
-    <div class="cm-resize"></div>
-`;
-
-const InnerCustomMenuNav = `
-    <span>$TEXT</span><div class="cm-nav-underline"></div><div class="cm-nav-menu-background"><div></div></div>
-`;
-
-const InnerCustomMenuContainer = `
-    <div class="cm-container-fcolumn"></div>
-    <div class="cm-container-scolumn"></div>
-`;
-
-const InnerCustomMenu2 = `
-    <div class="cm-menu-title cm-gradient-color">$TEXT</div>
-    <div class="cm-gradient"></div>
-    <div class="cm-menu-inner"></div>
-`;
-
-const CustomMenuTypes = {
-    checkbox: `<div class="cm-menu-element"><div class="cm-menu-checkbox" onclick="CMenuCheckbox(this,'$ID')"></div><span>$TEXT</span></div>`,
-    list: `<div class=cm-menu-element><span>$TEXT</span><select title="$ID" class="cm-menu-list" onclick="CMenuListClicked(this)">$OPTIONS</select></div>`,
-    slider: `<div class=cm-menu-element><span>$TEXT</span><div class="cm-menu-slider"><div class="cm-menu-innerslider cm-gradient"></div></div></div>`,
-    button: `<div class="cm-menu-element"><div class="cm-menu-button" onclick="CMenuButtonClicked(this,'$ID')">$TEXT</div></div>`,
-    input: `<div class="cm-menu-element"><span>$TEXT</span><input class="cm-menu-input" type="$TYPE" value="$VALUE" name="$ID"></div>`
-};*/

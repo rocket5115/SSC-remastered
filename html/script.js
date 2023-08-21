@@ -37,7 +37,11 @@ document.addEventListener('contextmenu', function(e) {
 
 document.addEventListener('keydown', function(e) {
     if(e.key==='Escape'){
-        post('nuioff',{});
+        if(IsCMenuOpen()){
+            SetCMenuDisplay(false);
+        } else {
+            post('nuioff',{});
+        };
     };
 });
 
@@ -163,6 +167,8 @@ function ChangeQuickElement(o,n) {
     delete(QuickAccess[o]);
 };
 
+var CopiedClassData = "";
+
 function AddSceneElement(id, type, name) {
     if(!Scenes['Scene: '+id])return;
     const element = document.createElement('div');
@@ -202,6 +208,22 @@ function AddSceneElement(id, type, name) {
             } else if(ret==='select'){
                 StartSelect(Scenes['Scene: '+newTable.scene_id].children, e);
                 newTable.DOM.classList.add('select-selected');
+            } else if(ret==='copy_class') {
+                post('copy_entity_class', {name: newTable.name}).then((e)=>{
+                    CopiedClassData = e;
+                    AddNotification({title: 'Info', message: 'Copied Class Data: '+CopiedClassData, color: 'yellow'});
+                });
+            } else if(ret==='paste2') {
+                const elems = SelectRetrieveSelected();
+                if(elems.length===0)return;
+                elems.forEach(elem=>{
+                    WorkspaceUpdateData({
+                        entity: elem.data.name,
+                        classes: CopiedClassData
+                    });
+                });
+                AddNotification({title: 'Info', message: 'Pasted Class Data: '+CopiedClassData+'; To '+elems.length+' entities', color: 'yellow'});
+                StopSelect();
             } else if(ret==='stop2') {
                 StopSelect();
             } else if(ret==='change2') {
@@ -257,22 +279,22 @@ function AddSceneElement(id, type, name) {
                     SendEvent('removed-entity', {name: elem.data.name});
                     post('remove_entity', {name: elem.data.name});
                 });
+                StopSelect();
             };
         },element.classList.contains('select-selected')?InnerSelectForm:InnerChildForm);
     });
     return element;
 };
 
-$(document).ready(function(){
+let LoadedData = false;
+
+const LoadAllData = ()=>{
+    if(LoadedData)return;
+    LoadedData=true;
     EnsureDraggable(); //draggable.js <shadowElement>
     EnsureWorkspace(); //workspace.js
     EnsureNotifications(); //notifications.js
-    //Ensure List Element(Scenes,events)
     CreateSceneInstance(0,true);
-    //CreateSceneInstance(1,true);
-    /*AddSceneElement(1,1,'ok');
-    AddSceneElement(1,1,'ok2');
-    AddSceneElement(1,1,'ok3');*/
     document.querySelector('.list').addEventListener('contextmenu', function(e) {
         if(!wait){
             CreateSceneDropdownForm(e.clientX, e.clientY, (ret)=>{
@@ -291,7 +313,7 @@ $(document).ready(function(){
             },InnerSceneForm);
         };
     });
-});
+};
 
 function AddEntity(type) {
     CreateNewForm(Options[type], (e)=>{post('spawn_entity', {type: type, model: e.model, mission: e.mission, network: e.network, door: e.door})});
@@ -309,7 +331,10 @@ function GetRelativePositionInPercent(cx,cy,rx,ry) {
 window.addEventListener('message', function (event) {
     let data = event.data;
     Config.debug&&console.log('MSG: '+data.type+":",JSON.stringify(data));
-    if(data.type==='show') {
+    if(data.type==='load'){
+        LoadAllData();
+        SendEvent('script-loaded',{});
+    } else if(data.type==='show') {
         if(data.show){
             document.querySelector('.G_Container').style.display = 'grid';
         } else {
@@ -360,6 +385,10 @@ window.addEventListener('message', function (event) {
     } else if(data.type==='event'){
         SendEvent(data.name, {...data.data})
     };
+});
+
+$(document).ready(()=>{
+    post('loaded',{});
 });
 
 document.addEventListener('workspace-move-all', (e)=>{

@@ -291,6 +291,18 @@ const DynamicConfigCBs = {
     },
     network: (value,e)=>{
         post('update_entity_network', {name: e.querySelector('.category-element-header>span')?.textContent||e.parentNode.parentNode.parentNode.querySelector('.category-element-header>span').textContent, value: value});
+    },
+    classes: (prev,value,e)=>{
+        const inputString = value;
+        const regex = /#([^#]+)/g;
+        const matches = [];
+        let match;
+        while ((match = regex.exec(inputString))) {
+            matches.push(match[1]);
+        };
+        if(matches.length>0){
+            post('update_entity_classes', {name: e.querySelector('.category-element-header>span')?.textContent||e.parentNode.parentNode.parentNode.querySelector('.category-element-header>span').textContent, value: matches});
+        };
     }
 };
 
@@ -300,7 +312,8 @@ function SetupDynamicConfigElement(elem) {
     const rot = elem.querySelector('input[name="rot"]');
     const mission = elem.querySelector('input[name="mission"]');
     const network = elem.querySelector('input[name="network"]');
-    const iterable = [name,coords,rot,mission,network];
+    const classes = elem.querySelector('input[name="classes"]');
+    const iterable = [name,coords,rot,mission,network,classes];
     iterable.forEach(r=>{
         if(r.type==='text'){
             r.addEventListener('keydown', (e)=>{

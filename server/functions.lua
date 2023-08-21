@@ -139,7 +139,8 @@ function RetrieveStaticFileData(src)
                 coords = v.coords,
                 rotation = v.rotation,
                 model = v.model,
-                id = v.id
+                id = v.id,
+                classes = v.classes
             })
         end
     end
@@ -168,27 +169,27 @@ Citizen.CreatePed = CreateBucketPed
 Citizen.CreateVehicle = CreateBucketVehicle
 Citizen.CreateObject = CreateBucketObject
 
-function LoadSceneBucket(data)
+function LoadSceneBucket(data,bucket)
     local objs,vehs,peds = GetAllObjects(),GetAllVehicles(),GetAllPeds()
     for k,v in pairs(data)do
         if v.type==1 then
             local vec = vector3(v.coords.x,v.coords.y,v.coords.z)
             for i=1,#peds do
-                if v.model==GetEntityModel(peds[i]) and #(vec-GetEntityCoords(peds[i]))<10.0 then
+                if GetEntityRoutingBucket(peds[i])==bucket and v.model==GetEntityModel(peds[i]) and #(vec-GetEntityCoords(peds[i]))<10.0 then
                     DeleteEntity(peds[i])
                 end
             end
         elseif v.type==2 then
             local vec = vector3(v.coords.x,v.coords.y,v.coords.z)
             for i=1,#vehs do
-                if v.model==GetEntityModel(vehs[i]) and #(vec-GetEntityCoords(vehs[i]))<10.0 then
+                if GetEntityRoutingBucket(vehs[i])==bucket and v.model==GetEntityModel(vehs[i]) and #(vec-GetEntityCoords(vehs[i]))<10.0 then
                     DeleteEntity(vehs[i])
                 end
             end
         elseif v.type==3 then
             local vec = vector3(v.coords.x,v.coords.y,v.coords.z)
             for i=1,#objs do
-                if v.model==GetEntityModel(objs[i]) and #(vec-GetEntityCoords(objs[i]))<10.0 then
+                if GetEntityRoutingBucket(objs[i])==bucket and v.model==GetEntityModel(objs[i]) and #(vec-GetEntityCoords(objs[i]))<10.0 then
                     DeleteEntity(objs[i])
                 end
             end
@@ -196,8 +197,8 @@ function LoadSceneBucket(data)
     end
     for k,v in pairs(data)do
         if v.type==1 then
-            local ped = Citizen.CreatePed(v.coords.x, v.coords.y, v.coords.z, v.rotation.z, v.model)
-            SetEntityCoords(ped,v.coords.x, v.coords.y, v.coords.z, false, false, false)
+            local ped = Citizen.CreatePed(v.coords.x, v.coords.y, v.coords.z-1.0, v.rotation.z, v.model)
+            SetEntityCoords(ped,v.coords.x, v.coords.y, v.coords.z-1.0, false, false, false)
             v.entity = ped
         elseif v.type==2 then
             local veh = Citizen.CreateVehicle(v.coords.x, v.coords.y, v.coords.z, v.rotation.z, v.model)
@@ -212,27 +213,27 @@ function LoadSceneBucket(data)
     return data
 end
 
-function UnloadSceneBucket(data)
+function UnloadSceneBucket(data,bucket)
     local objs,vehs,peds = GetAllObjects(),GetAllVehicles(),GetAllPeds()
     for k,v in pairs(data)do
         if v.type==1 then
             local vec = vector3(v.coords.x,v.coords.y,v.coords.z)
             for i=1,#peds do
-                if v.model==GetEntityModel(peds[i]) and #(vec-GetEntityCoords(peds[i]))<10.0 then
+                if GetEntityRoutingBucket(peds[i])==bucket and v.model==GetEntityModel(peds[i]) and #(vec-GetEntityCoords(peds[i]))<10.0 then
                     DeleteEntity(peds[i])
                 end
             end
         elseif v.type==2 then
             local vec = vector3(v.coords.x,v.coords.y,v.coords.z)
             for i=1,#vehs do
-                if v.model==GetEntityModel(vehs[i]) and #(vec-GetEntityCoords(vehs[i]))<10.0 then
+                if GetEntityRoutingBucket(vehs[i])==bucket and v.model==GetEntityModel(vehs[i]) and #(vec-GetEntityCoords(vehs[i]))<10.0 then
                     DeleteEntity(vehs[i])
                 end
             end
         elseif v.type==3 then
             local vec = vector3(v.coords.x,v.coords.y,v.coords.z)
             for i=1,#objs do
-                if v.model==GetEntityModel(objs[i]) and #(vec-GetEntityCoords(objs[i]))<10.0 then
+                if GetEntityRoutingBucket(objs[i])==bucket and v.model==GetEntityModel(objs[i]) and #(vec-GetEntityCoords(objs[i]))<10.0 then
                     DeleteEntity(objs[i])
                 end
             end
@@ -249,12 +250,22 @@ function SetSceneBucket(ents, id)
     end
 end
 
-function IsAllowed(src, allow0)
+local Adms = {} -- to save some performance
+
+function IsAllowed(src, allow0, bucket)
     if src<=0 and allow0 then return true end
     if src<=0 then return false end
+    if not GConfig.EnablePermissions and not bucket then return true end
+    if (not bucket and Adms[src]==1)or(bucket and Adms[src]==2) then return true end
     for k,v in ipairs(GetPlayerIdentifiers(src))do
-        for i=1,#Config.Admins do
-            if v:match(Config.Admins[i]) then return true end
+        if bucket then
+            for i=1,#Config.BucketAdmins do
+                if v:match(Config.BucketAdmins[i]) then Adms[src]=2 return true end
+            end
+        else
+            for i=1,#Config.EditorAdmins do
+                if v:match(Config.EditorAdmins[i]) then Adms[src]=1 return true end
+            end
         end
     end
     return false

@@ -1,8 +1,10 @@
+local buckets = {}
 if GConfig.Enable then
     Current_Sessions = {}
 
     RegisterNetEvent('SSC:Server:CreateSession', function(id,_src,ov)
-        local src = _src or source
+        local src = (tonumber(source)<=0 and _src or source)
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if not Current_Sessions[uid] then
             local data = RetrieveFile('_SSC_Session_'..id, src)or {}
@@ -25,6 +27,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:LoadSession', function(id)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             TriggerClientEvent('SSC:Client:UnloadSession', src, Current_Sessions[uid])
@@ -37,7 +40,8 @@ if GConfig.Enable then
     end)
 
     RegisterNetEvent('SSC:Server:UnloadSession', function(_src)
-        local src = _src or source
+        local src = (source<=0 and _src or source)
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             TriggerClientEvent('SSC:Client:UnloadSession', src, Current_Sessions[uid])
@@ -48,7 +52,8 @@ if GConfig.Enable then
     end)
 
     RegisterNetEvent('SSC:Server:SaveSession', function(_src, data, id)
-        local src = _src or source
+        local src = (source<=0 and _src or source)
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             if data then
@@ -66,6 +71,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:add_entity', function(data)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             table.insert(Current_Sessions[uid].scenes[data.scene].Entities, data)
@@ -76,8 +82,8 @@ if GConfig.Enable then
     end)
 
     RegisterNetEvent('SSC:Server:remove_entity', function(data)
-        print(data.id,source)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             for k,v in ipairs(Current_Sessions[uid].scenes[data.scene].Entities)do
@@ -94,6 +100,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:add_scene', function(name)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             Current_Sessions[uid].scenes[name]=Current_Sessions[uid].scenes[name]or{Entities={}}
@@ -105,6 +112,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:remove_scene', function(name)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             Current_Sessions[uid].scenes[name]=nil
@@ -116,6 +124,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:change_entity_scene', function(data)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             for k,v in ipairs(Current_Sessions[uid].scenes[data.from].Entities)do
@@ -134,6 +143,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:save_entity', function(data)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             for k,v in ipairs(Current_Sessions[uid].scenes[data.scene].Entities)do
@@ -150,6 +160,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:change_entity_name', function(o_name, n_name, scene)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             for k,v in ipairs(Current_Sessions[uid].scenes[scene].Entities)do
@@ -166,6 +177,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:create_template', function(name, data)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if Current_Sessions[uid] then
             local temp = RetrieveFile('_SSC_Template_'..name, src)
@@ -183,6 +195,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:load_template', function(name)
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if not Current_Sessions[uid] then
             SendError(src, 'Session not loaded. Template cannot be loaded.')
@@ -200,6 +213,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:RetrieveTemplates', function()
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         local retval = {}
         for name in pairs(Files) do
@@ -213,6 +227,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:RetrieveSessions', function()
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         local retval = {}
         for name in pairs(Files) do
@@ -226,6 +241,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:RetrieveFiles', function()
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         local retval = {}
         for k in pairs(Sessions)do
@@ -236,6 +252,7 @@ if GConfig.Enable then
 
     RegisterNetEvent('SSC:Server:RetrieveAttachedFiles', function()
         local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         local retval = {}
         if Current_Sessions[uid] then
@@ -246,8 +263,44 @@ if GConfig.Enable then
         TriggerClientEvent('SSC:Client:RetrieveAttachedFiles', src, retval)
     end)
 
-    RegisterCommand('attachfile', function(source,args)
+    RegisterNetEvent('SSC:Server:RetrieveLoadedStaticMaps', function()
         local src = source
+        if not IsAllowed(src)then return end
+        local uid = GetUniqueId(src)
+        local retval = {}
+        if IsAllowed(src) then
+            for k,v in pairs(buckets)do
+                retval[#retval+1]={
+                    name = k:sub(1,k:len()-tostring(v.bucket):len()),
+                    bucket = v.bucket
+                }
+            end
+        end
+        TriggerClientEvent('SSC:Client:RetrieveLoadedStaticMaps', src, retval)
+    end)
+
+    RegisterNetEvent('SSC:Server:RetrieveStaticMaps', function()
+        local src = source
+        if not IsAllowed(src)then return end
+        local uid = GetUniqueId(src)
+        local retval = {}
+        if IsAllowed(src) then
+            for k,v in pairs(Files)do
+                if(k:sub(1,12)=='_SSC_Static_')then
+                    retval[#retval+1]={
+                        name = k:sub(13,k:len()),
+                        mine = (RetrieveFile(k)or {}).lasteditor==uid
+                    }
+                end
+            end
+        end
+        TriggerClientEvent('SSC:Client:RetrieveStaticMaps', src, retval)
+    end)
+
+    RegisterCommand('attachfile', function(source,args)
+        if not IsAllowed(source)then return end
+        local src = source
+        if not IsAllowed(src)then return end
         local uid = GetUniqueId(src)
         if not args[1] then
             SendError(src, 'You must provide file name!')
@@ -264,7 +317,6 @@ if GConfig.Enable then
                     SendMessage(src, 'Warning', 'Attachment File Attached and Loaded directly from code', 'orange')
                     TriggerEvent('SSC:Server:SaveSession', src)
                     load(type(data)=="string"and data or "")()
-                    print(Sessions[args[1]],data)
                 end
             elseif not Current_Sessions[uid].scenes['0'].Files[args[1]] then
                 Current_Sessions[uid].scenes['0'].Files[args[1]] = true
@@ -279,6 +331,7 @@ if GConfig.Enable then
     end)
 
     RegisterCommand('detachfile', function(source,args)
+        if not IsAllowed(source)then return end
         local src = source
         local uid = GetUniqueId(src)
         if not args[1] then
@@ -299,6 +352,7 @@ if GConfig.Enable then
     end)
 
     RegisterCommand('createstaticmap', function(source, args)
+        if not IsAllowed(source)then return end
         local src = source
         local uid = GetUniqueId(src)
         if not args[1] then
@@ -313,7 +367,7 @@ if GConfig.Enable then
                     return
                 end
                 SaveFile('_SSC_Static_'..args[1], RetrieveStaticFileData(src))
-                SendMessage(src, 'Success', 'Static File created. You can use it with Config.StaticScenes.')
+                SendMessage(src, 'Success', 'Static File created and overwritten. You can use it with Config.StaticScenes.')
             else
                 SaveFile('_SSC_Static_'..args[1], RetrieveStaticFileData(src))
                 SendMessage(src, 'Success', 'Static File created. You can use it with Config.StaticScenes.')
@@ -323,7 +377,34 @@ if GConfig.Enable then
         end
     end)
 
+    RegisterCommand('removestaticmap', function(source, args)
+        if not IsAllowed(source)then return end
+        local src = source
+        local uid = GetUniqueId(src)
+        if IsAllowed(src, true) then
+            local file = RetrieveFile('_SSC_Static_'..args[1])
+            if not file then
+                SendError(src, 'Static File: '..args[1]..'; does not exist')
+            elseif file.lasteditor == uid or src<=0 then
+                if RemoveFile('_SSC_Static_'..args[1]) then
+                    if src>0 then
+                        SendMessage(src, 'Success', 'Static File: '..args[1]..'; removed. It is now no more available.', 'orange')
+                    else
+                        print('Static File: '..args[1]..'; removed successfully')
+                    end
+                else
+                    if src>0 then
+                        SendError(src, 'Static File: '..args[1]..'; does not exist')
+                    else
+                        print('Static File: '..args[1]..'; does not exist')
+                    end
+                end
+            end
+        end
+    end)
+
     RegisterCommand('removesession', function(source, args)
+        if not IsAllowed(source)then return end
         local src = source
         local uid = GetUniqueId(src)
         if not args[1] then
@@ -349,6 +430,7 @@ if GConfig.Enable then
     end)
 
     RegisterCommand('removetemplate', function(source, args)
+        if not IsAllowed(source)then return end
         local src = source
         local uid = GetUniqueId(src)
         if not args[1] then
@@ -368,20 +450,19 @@ if GConfig.Enable then
     end)
 
     RegisterCommand('refreshconfig', function(source, args)
+        if not IsAllowed(source,true)then return end
         EnsureConfigFile()
     end)
 end
-
-local buckets = {}
 
 CreateThread(function()
     Wait(0)
     for k,v in ipairs(Config.StaticScenes)do
         local file = RetrieveFile('_SSC_Static_'..v.id)
         if file then
-            local ents = LoadSceneBucket(file.entities)
+            local ents = LoadSceneBucket(file.entities, v.bucket)
             SetSceneBucket(ents, v.bucket or 0)
-            buckets[v.id] = {ents = ents, bucket=v.bucket or 0}
+            buckets[v.id..(v.bucket or 0)] = {ents = ents, bucket=v.bucket or 0, lasteditor=file.lasteditor}
             for k,v in pairs(file.Files)do
                 if Sessions[k] then
                     StartSession(k, ents)
@@ -394,13 +475,13 @@ CreateThread(function()
 end)
 
 RegisterCommand('loadscenebucket', function(source,args)
-    if not IsAllowed(source, true) then SendError(source, 'You are not allowed to do that') return end
+    if not IsAllowed(source, true, true) then SendError(source, 'You are not allowed to do that') return end
     if not args[1] then SendError(source, 'Invalid Static Scene Id') return end
     if buckets[args[1]..(args[2] or 0)] then
         UnloadSceneBucket(buckets[args[1]..(args[2] or 0)].ents)
         local file = RetrieveFile('_SSC_Static_'..args[1])
         if not file then SendError(source, 'Static Scene not found') return end
-        local ents = LoadSceneBucket(file.entities)
+        local ents = LoadSceneBucket(file.entities, tonumber(args[2]or 0) or 0)
         SetSceneBucket(ents, tonumber(args[2]or 0) or 0)
         for k,v in pairs(file.Files)do
             if Sessions[k] then
@@ -408,10 +489,11 @@ RegisterCommand('loadscenebucket', function(source,args)
             end
         end
         buckets[args[1]..(args[2] or 0)].bucket = tonumber(args[2]or 0)
+        buckets[args[1]..(args[2] or 0)].lasteditor=file.lasteditor
     else
         local file = RetrieveFile('_SSC_Static_'..args[1])
         if not file then SendError(source, 'Static Scene not found') return end
-        local ents = LoadSceneBucket(file.entities)
+        local ents = LoadSceneBucket(file.entities, tonumber(args[2]or 0) or 0)
         SetSceneBucket(ents, tonumber(args[2]or 0) or 0)
         for k,v in pairs(file.Files)do
             if Sessions[k] then
@@ -420,18 +502,39 @@ RegisterCommand('loadscenebucket', function(source,args)
         end
         buckets[args[1]..(args[2] or 0)] = {
             ents = ents,
-            bucket = tonumber(args[2]or 0) or 0
+            bucket = tonumber(args[2]or 0) or 0,
+            lasteditor = file.lasteditor
         }
     end
 end)
 
 RegisterCommand('unloadscenebucket', function(source,args)
-    if not IsAllowed(source, true) then SendError(source, 'You are not allowed to do that') return end
+    if not IsAllowed(source, true, true) then SendError(source, 'You are not allowed to do that') return end
     if not args[1] then SendError(source, 'Invalid Static Scene Id') return end
     if buckets[args[1]..(args[2] or 0)] then
-        UnloadSceneBucket(buckets[args[1]..(args[2] or 0)].ents)
+        UnloadSceneBucket(buckets[args[1]..(args[2] or 0)].ents, tonumber(args[2]or 0) or 0)
         buckets[args[1]..(args[2] or 0)]=nil
     else
         SendError(source, 'Invalid Static Scene Id or invalid Bucket or already unloaded')
     end
+end)
+
+RegisterCommand('unloadallscenebuckets', function(source,args)
+    if not IsAllowed(source, true, true) then SendError(source, 'You are not allowed to do that') return end
+    if not args[1] then SendError(source, 'Invalid Static Scene Id') return end
+    for k,v in pairs(buckets)do
+        if k:sub(1,k:len()-tostring(v.bucket):len())==args[1]then
+            UnloadSceneBucket(v.ents, v.bucket)
+            buckets[k]=nil
+        end
+    end
+end)
+
+RegisterCommand('setbucket', function(source, args)
+    SetPlayerRoutingBucket(source, tonumber(args[1]or 0))
+end)
+
+RegisterNetEvent('SSC:Server:CheckIfAdmin', function()
+    local src = source
+    TriggerClientEvent('SSC:Client:IsAdmin', src, IsAllowed(src), IsAllowed(src, false, true))
 end)

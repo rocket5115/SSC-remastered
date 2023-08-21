@@ -29,13 +29,45 @@ function SendWhenNUIActive(data,...)
     end
 end
 
+RegisterNUICallback('loaded', function()
+    NUILoaded = true
+    if not GConfig.EnablePermissions and GConfig.Enable then
+        GConfig.Admin = true
+        SendNUIMessage({type='load'})
+        SendNUIMessage({
+            type='event',
+            name='admin',
+            data={
+                normal = true,
+                bucket = true
+            }
+        })
+    elseif GConfig.EnablePermissions and GConfig.Enable then
+        TriggerServerEvent('SSC:Server:CheckIfAdmin')
+    end
+end)
+
+RegisterNetEvent('SSC:Client:IsAdmin', function(is,bucket)
+    if is then
+        GConfig.Admin = true
+        SendNUIMessage({type='load'})
+        SendNUIMessage({
+            type='event',
+            name='admin',
+            data={
+                normal = is,
+                bucket = bucket
+            }
+        })
+    end
+end)
+
 CreateThread(function()
     local requested = 0
-    while not NUILoaded and requested<50 do
+    while not NUILoaded do
         Wait(50)
         requested=requested+1
     end
-    NUILoaded=true
     for i=1,#actives do
         if(type(actives[i])~='function')then
             SendNUIMessage(actives[i])
@@ -125,6 +157,21 @@ RegisterNUICallback('update_entity_network', function(data)
     local entity = GetEntityFromName(data.name)
     C_Entities[entity].data.network = data.value
     TriggerServerEvent('SSC:Server:save_entity', C_Entities[entity].data)
+end)
+
+RegisterNUICallback('update_entity_classes', function(data)
+    local entity = GetEntityFromName(data.name)
+    C_Entities[entity].data.classes = data.value
+    TriggerServerEvent('SSC:Server:save_entity', C_Entities[entity].data)
+end)
+
+RegisterNUICallback('copy_entity_class', function(data,cb)
+    local entity = GetEntityFromName(data.name)
+    if #C_Entities[entity].data.classes>0 then
+        cb("#"..table.concat(C_Entities[entity].data.classes,"#"))
+    else
+        cb("")
+    end
 end)
 
 RegisterNUICallback('go_to_entity', function(data)
@@ -461,4 +508,52 @@ end)
 
 RegisterNUICallback('refresh_files_misc', function()
     ExecuteCommand('refreshconfig')
+end)
+
+local LoadedStaticsPromise = nil
+
+RegisterNUICallback('refresh_statics', function(_,cb)
+    LoadedStaticsPromise = promise:new()
+    TriggerServerEvent('SSC:Server:RetrieveLoadedStaticMaps')
+    Citizen.Await(LoadedStaticsPromise)
+    cb(LoadedStaticsPromise.value)
+end)
+
+RegisterNetEvent('SSC:Client:RetrieveLoadedStaticMaps', function(data)
+    if LoadedStaticsPromise then
+        LoadedStaticsPromise:resolve(data)
+        LoadedStaticsPromise = nil
+    end
+end)
+
+RegisterNUICallback('unload_static_map', function(data)
+    ExecuteCommand('unloadscenebucket '..data.id.." "..data.bucket)
+end)
+
+RegisterNUICallback('unload_all_static_maps', function(data)
+    ExecuteCommand('unloadallscenebuckets '..data.id)
+end)
+
+local StaticsPromise = nil
+
+RegisterNUICallback('refresh_all_statics', function(_,cb)
+    StaticsPromise = promise:new()
+    TriggerServerEvent('SSC:Server:RetrieveStaticMaps')
+    Citizen.Await(StaticsPromise)
+    cb(StaticsPromise.value)
+end)
+
+RegisterNetEvent('SSC:Client:RetrieveStaticMaps', function(data)
+    if StaticsPromise then
+        StaticsPromise:resolve(data)
+        StaticsPromise = nil
+    end
+end)
+
+RegisterNUICallback('load_static', function(data)
+    ExecuteCommand('loadscenebucket '..data.name..' '..data.id)
+end)
+
+RegisterNUICallback('remove_static', function(data)
+    ExecuteCommand('removestaticmap '..data.name)
 end)

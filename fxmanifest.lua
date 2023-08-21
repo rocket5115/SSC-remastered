@@ -28,5 +28,6 @@ server_scripts {
     'configs/config.lua',
     'configs/config_s.lua',
     'server/functions.lua',
-    'server/server.lua'
+    'server/server.lua',
+    'version.lua'
 }

@@ -138,7 +138,8 @@ function RegisterEntity(entity,scene,options)
             mission = mission,
             door = false,
             id = options.id or tostring(math.random(99999)),
-            scene = tostring(scene)or'0'
+            scene = tostring(scene)or'0',
+            classes = options.classes or {}
         }
     }
     table.insert(Entities, newEntity)
@@ -215,7 +216,8 @@ function RetrieveTemplateData()
                 mission = v.data.mission,
                 rOffset = 0.0,
                 offset = vector3(0.0,0.0,0.0),
-                id = v.data.id
+                id = v.data.id,
+                classes = v.data.classes
             }
         else
             retval[#retval+1] = {
@@ -226,7 +228,8 @@ function RetrieveTemplateData()
                 mission = v.data.mission,
                 rOffset = v.data.rotation.z - retval[1].rotation.z,
                 offset = GetOffsetFromEntityGivenWorldCoords(fEntity, table.unpack(GetEntityCoords(v.entity))),
-                id = v.data.id
+                id = v.data.id,
+                classes = v.data.classes
             }
         end
     end

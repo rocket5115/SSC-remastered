@@ -1,27 +1,32 @@
 local show = false
 local lastsession = '0'
 RegisterCommand('openssc', function()
+    if not GConfig.Admin then return end
     show=not show
     display(show,false)
 end)
 
 RegisterCommand('createsession', function(_,args)
+    if not GConfig.Admin then return end
     local id = args[1] or '0'
     TriggerServerEvent('SSC:Server:CreateSession', id)
     lastsession=id
 end)
 
 RegisterCommand('unloadsession', function()
+    if not GConfig.Admin then return end
     TriggerServerEvent('SSC:Server:UnloadSession', id)
 end)
 
 RegisterCommand('loadsession', function(_,args)
+    if not GConfig.Admin then return end
     local id = args[1] or '0'
     TriggerServerEvent('SSC:Server:LoadSession', id)
     lastsession=id
 end)
 
 RegisterCommand('createtemplate', function(_,args)
+    if not GConfig.Admin then return end
     local name = args[1]
     if not name or name:len()==0 then
         SendNUIMessage({
@@ -38,6 +43,7 @@ RegisterCommand('createtemplate', function(_,args)
 end)
 
 RegisterCommand('loadtemplate', function(_,args)
+    if not GConfig.Admin then return end
     local name = args[1]
     if not name or name:len()==0 then
         SendNUIMessage({
@@ -53,6 +59,7 @@ RegisterCommand('loadtemplate', function(_,args)
 end)
 
 RegisterCommand('savesession', function()
+    if not GConfig.Admin then return end
     for k,v in pairs(C_Entities) do
         v.data.coords = GetEntityCoords(k)
         v.data.rotation = GetEntityRotation(k)
@@ -61,7 +68,8 @@ RegisterCommand('savesession', function()
             coords = v.data.coords,
             rotation = v.data.rotation,
             network = v.data.network,
-            mission = v.data.mission
+            mission = v.data.mission,
+            classes = v.data.classes
         })
     end
     TriggerServerEvent('SSC:Server:SaveSession', nil, C_Entities)
@@ -108,7 +116,7 @@ RegisterNetEvent('SSC:Client:LoadSession', function(data)
                             DeleteNetworkedEntity(peds[i])
                         end
                     end
-                    entity = CreateLocalPed(coords.x, coords.y, coords.z - 1.0, v.rotation.z, v.model, v.network, v.mission, {scene=name,id=v.id})
+                    entity = CreateLocalPed(coords.x, coords.y, coords.z - 1.0, v.rotation.z, v.model, v.network, v.mission, {scene=name,id=v.id,classes=v.classes})
                     SetPedStill(entity)
                 elseif v.type == 2 then
                     for i=1,#vehicles do
@@ -116,7 +124,7 @@ RegisterNetEvent('SSC:Client:LoadSession', function(data)
                             DeleteNetworkedEntity(vehicles[i])
                         end
                     end
-                    entity = CreateLocalVehicle(coords.x, coords.y, coords.z, v.rotation.z, v.model, v.network, v.mission, {scene=name,id=v.id})
+                    entity = CreateLocalVehicle(coords.x, coords.y, coords.z, v.rotation.z, v.model, v.network, v.mission, {scene=name,id=v.id,classes=v.classes})
                 end
             elseif v.type==3 then
                 for i=1,#objects do
@@ -124,7 +132,7 @@ RegisterNetEvent('SSC:Client:LoadSession', function(data)
                         DeleteNetworkedEntity(objects[i])
                     end
                 end
-                entity = CreateLocalObject(coords.x, coords.y, coords.z, v.model, v.network, v.mission, v.door, {scene=name,id=v.id})
+                entity = CreateLocalObject(coords.x, coords.y, coords.z, v.model, v.network, v.mission, v.door, {scene=name,id=v.id,classes=v.classes})
                 SetEntityRotation(entity, v.rotation.x, v.rotation.y, v.rotation.z)
             end
             FreezeEntityPosition(entity, true)
@@ -134,6 +142,10 @@ RegisterNetEvent('SSC:Client:LoadSession', function(data)
                 entity = C_Entities[entity].data.id,
                 scene = C_Entities[entity].data.scene
             })
+            local classes = ""
+            for i=1,#C_Entities[entity].data.classes do
+                classes = classes..'#'..C_Entities[entity].data.classes[i]
+            end
             SendNUIMessage({
                 type = 'update_entity',
                 data = {
@@ -141,7 +153,8 @@ RegisterNetEvent('SSC:Client:LoadSession', function(data)
                     coords = tostring(RoundNumber(coords.x,4))..","..tostring(RoundNumber(coords.y,4))..","..tostring(RoundNumber(v.type~=1 and coords.z or coords.z-1.0,4)),
                     rot = tostring(RoundNumber(v.rotation.x,4))..","..tostring(RoundNumber(v.rotation.y,4))..","..tostring(RoundNumber(v.rotation.z,4)),
                     mission = v.mission,
-                    network = v.network
+                    network = v.network,
+                    classes = classes
                 }
             })
             ent = entity
@@ -346,16 +359,19 @@ AddEventHandler('SSC:Internal:slider_right', function(name)
 end)
 
 RegisterCommand('SSC_sliderr', function()
+    if not GConfig.Admin then return end
     if not ents or #ents==0 or cur_I==0 then return end
     TriggerEvent('SSC:Internal:slider_right', cur_slider)
 end)
 
 RegisterCommand('SSC_sliderl', function()
+    if not GConfig.Admin then return end
     if not ents or #ents==0 or cur_I==0 then return end
     TriggerEvent('SSC:Internal:slider_left', cur_slider)
 end)
 
 RegisterCommand('SSC_sliderd', function()
+    if not GConfig.Admin then return end
     SendNUIMessage({
         type = 'remove_entity',
         entity = ents[cur_I].data.id
@@ -482,7 +498,8 @@ RegisterNetEvent('SSC:Client:load_template', function(data)
                         coords = tostring(RoundNumber(C_Entities[entity].data.coords.x,4))..","..tostring(RoundNumber(C_Entities[entity].data.coords.y,4))..","..tostring(RoundNumber(C_Entities[entity].data.coords.z,4)),
                         rot = tostring(RoundNumber(rot.x,4))..","..tostring(RoundNumber(rot.y,4))..","..tostring(RoundNumber(rot.z,4)),
                         mission = C_Entities[entity].data.mission,
-                        network = C_Entities[entity].data.network
+                        network = C_Entities[entity].data.network,
+                        classes = C_Entities[entity].data.classes
                     }
                 })
                 TriggerEvent('SSC:Internal:new_entity', entity)

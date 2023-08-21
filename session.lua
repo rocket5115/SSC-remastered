@@ -36,8 +36,15 @@ function StartSession(name, entities)
             Sessions[name].listener[type](entities[i].entity)
         end
         Wait(10)
-        if Sessions[name].listener[entities[i].id] then
-            Sessions[name].listener[entities[i].id](entities[i].entity)
-        end
+        Citizen.SetTimeout(500, function()        
+            if Sessions[name].listener[entities[i].id] then
+                Sessions[name].listener[entities[i].id](entities[i].entity)
+            end
+            for j=1,#(entities[i].classes or{})do --done for backwards compatibility
+                if Sessions[name].listener['#'..entities[i].classes[j]]then
+                    Sessions[name].listener['#'..entities[i].classes[j]](entities[i].entity)
+                end
+            end
+        end)
     end
 end
